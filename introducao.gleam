@@ -1,5 +1,6 @@
 import gleam/io
 import gleam/string
+import sgleam/check
 
 pub fn dobro(n: Int) -> Int {
   n * 2
@@ -49,11 +50,15 @@ pub fn and(x: Bool, y: Bool) -> Bool {
   }
 }
 
-pub fn or(x:Bool, y: Bool) {
+pub fn or(x:Bool, y: Bool) -> Bool {
   case x {
     True -> True
     False -> y
   }
+}
+
+pub fn or_examples() {
+  check.eq(or(True, False), True) // sexo encanta
 }
 
 pub fn main() {
