@@ -159,7 +159,7 @@ pub fn data_maior(data1: DataInt, data2: DataInt) -> Bool {
         False -> True
       }
     }
-  }
+  } 
 }
 
 pub fn data_maior_examples() {
