@@ -120,6 +120,58 @@ pub fn pode_mover_examples() {
   check.eq(pode_mover(Subindo, Subindo), False)
 }
 
+/// Exercício 12
+pub type Data {
+  Data(dia: String, mes: String, ano: String)
+}
+
+pub fn transforma_data(data: String) -> Data {
+  Data(dia: string.slice(data, 0, 2), mes: string.slice(data, 3, 2), ano: string.slice(data, 6, 4))
+}
+
+pub fn transforma_data_examples() {
+  check.eq(transforma_data("23/03/2005"), Data("23", "03", "2005"))
+}
+
+pub fn ultimo_dia(data: Data) -> Bool {
+  case data {
+    Data("31", "12", _) -> True
+    Data(_, _, _) -> False
+  }
+}
+
+pub fn ultimo_dia_examples() {
+  check.eq(ultimo_dia(Data("23", "03", "2005")), False)
+  check.eq(ultimo_dia(Data("31", "12", "2005")), True)
+}
+
+pub type DataInt {
+  DataInt(dia: Int, mes: Int, ano: Int)
+}
+
+pub fn data_maior(data1: DataInt, data2: DataInt) -> Bool {
+  case data1.ano > data2.ano {
+    True -> False
+    False -> case data1.mes > data2.mes {
+      True -> False
+      False -> case data1.dia > data2.dia {
+        True -> False
+        False -> True
+      }
+    }
+  }
+}
+
+pub fn data_maior_examples() {
+  check.eq(data_maior(DataInt(23, 3, 2020), DataInt(31, 4, 2019)), False)
+  check.eq(data_maior(DataInt(23, 3, 2018), DataInt(31, 4, 2019)), True)
+  check.eq(data_maior(DataInt(23, 3, 2019), DataInt(31, 4, 2019)), True)
+  check.eq(data_maior(DataInt(23, 5, 2019), DataInt(31, 4, 2019)), False)
+  check.eq(data_maior(DataInt(23, 4, 2019), DataInt(31, 4, 2019)), True)
+  check.eq(data_maior(DataInt(23, 4, 2018), DataInt(22, 4, 2019)), False)
+}
+
+
 pub fn main() {
   io.println("Hello World!")
 }
