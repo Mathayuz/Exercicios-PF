@@ -1,4 +1,3 @@
-import gleam/io
 import gleam/string
 import gleam/int
 import gleam/float
@@ -291,10 +290,4 @@ pub fn numero_palindromo(numero: Int) -> Bool {
 pub fn numero_palindromo_examples() {
   check.eq(numero_palindromo(9119), True)
   check.eq(numero_palindromo(9219), False)
-}
-
-
-
-pub fn main() {
-  io.println("Hello World!")
 }

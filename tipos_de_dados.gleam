@@ -1,9 +1,7 @@
-import gleam/io
 import gleam/string
 import gleam/int
 import gleam/float
 import sgleam/check
-
 
 /// Exercício 10
 pub type Direcao {
@@ -169,9 +167,4 @@ pub fn data_maior_examples() {
   check.eq(data_maior(DataInt(23, 5, 2019), DataInt(31, 4, 2019)), False)
   check.eq(data_maior(DataInt(23, 4, 2019), DataInt(31, 4, 2019)), True)
   check.eq(data_maior(DataInt(23, 4, 2018), DataInt(22, 4, 2019)), False)
-}
-
-
-pub fn main() {
-  io.println("Hello World!")
 }
