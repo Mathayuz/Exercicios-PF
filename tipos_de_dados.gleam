@@ -168,3 +168,20 @@ pub fn data_maior_examples() {
   check.eq(data_maior(DataInt(23, 4, 2019), DataInt(31, 4, 2019)), True)
   check.eq(data_maior(DataInt(23, 4, 2018), DataInt(22, 4, 2019)), False)
 }
+
+pub fn data_valida(data: DataInt) -> Bool {
+  case data.dia >= 1 && data.dia <= 31 {
+    True -> case data.mes == 1 || data.mes == 3 || data.mes == 5 || data.mes == 7 || data.mes == 8 || data.mes == 10 data.mes == 12 {
+      True -> case data.ano
+    }
+    False -> False
+  }
+}
+
+pub fn data_valida() {
+  check.eq(data_maior(Data("23/03/2005")), True)
+  check.eq(data_maior(Data("31/11/2024")), False)
+  check.eq(data_maior(Data("29/02/2024")), True)
+  check.eq(data_maior(Data("29/03/2023")), False)
+  check.eq(data_maior(Data("28/02/2023")), True)
+}
