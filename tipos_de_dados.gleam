@@ -171,17 +171,71 @@ pub fn data_maior_examples() {
 
 pub fn data_valida(data: DataInt) -> Bool {
   case data.dia >= 1 && data.dia <= 31 {
-    True -> case data.mes == 1 || data.mes == 3 || data.mes == 5 || data.mes == 7 || data.mes == 8 || data.mes == 10 data.mes == 12 {
-      True -> case data.ano
+    True -> case data.mes == 1 || data.mes == 3 || data.mes == 5 || data.mes == 7 || data.mes == 8 || data.mes == 10 || data.mes == 12 {
+      True -> data.ano > 0
+      False -> case data.ano % 100 != 0 && data.ano % 4 == 0 || data.ano % 400 == 0 {
+        True -> case data.mes == 2 {
+          True -> data.dia <= 29
+          False -> data.dia <= 30
+        }
+        False -> case data.mes == 2 {
+          True -> data.dia <= 28
+          False -> data.dia <= 30
+        }
+      }
     }
     False -> False
   }
 }
 
-pub fn data_valida() {
-  check.eq(data_maior(Data("23/03/2005")), True)
-  check.eq(data_maior(Data("31/11/2024")), False)
-  check.eq(data_maior(Data("29/02/2024")), True)
-  check.eq(data_maior(Data("29/03/2023")), False)
-  check.eq(data_maior(Data("28/02/2023")), True)
+pub fn data_valida_examples() {
+  check.eq(data_valida(DataInt(23, 03, 2005)), True)
+  check.eq(data_valida(DataInt(31, 11, 2024)), False)
+  check.eq(data_valida(DataInt(29, 02, 2024)), True)
+  check.eq(data_valida(DataInt(29, 03, 2023)), True)
+  check.eq(data_valida(DataInt(28, 02, 2023)), True)
+  check.eq(data_valida(DataInt(32, 03, 2023)), False)
+}
+
+/// Exercício 14
+pub type Figura {
+  Retangulo(largura: Float, altura: Float)
+  Circulo(raio: Float)
+}
+
+pub fn area(figura: Figura) -> Float {
+  case figura {
+    Retangulo(largura, altura) -> largura *. altura
+    Circulo(raio) -> 3.14 *. raio *. raio
+  }
+}
+
+pub fn area_examples() {
+  check.eq(area(Retangulo(2.0, 3.0)), 6.0)
+  check.eq(area(Circulo(2.0)), 12.56)
+}
+
+pub fn cabe_na_outra(figura1: Figura, figura2: Figura) -> Bool {
+  case figura1, figura2 {
+    Retangulo(largura1, altura1), Retangulo(largura2, altura2) ->  largura1 <=. largura2 && altura1 <=. altura2
+
+    Circulo(raio1), Circulo(raio2) -> raio1 <=. raio2
+
+    Retangulo(largura1, altura1), Circulo(raio2) -> case float.square_root({largura1 *. largura1 +. altura1 *. altura1}) {
+      Ok(x) -> raio2 >=. x /. 2.0
+      Error(Nil) -> False
+    }
+    Circulo(raio1), Retangulo(largura2, altura2) -> raio1 *. 2.0 <=. float.min(largura2, altura2)
+  }
+}
+
+pub fn cabe_na_outra_examples() {
+  check.eq(cabe_na_outra(Retangulo(2.0, 3.0), Retangulo(3.0, 4.0)), True)
+  check.eq(cabe_na_outra(Retangulo(2.0, 3.0), Retangulo(1.0, 4.0)), False)
+  check.eq(cabe_na_outra(Circulo(2.0), Circulo(3.0)), True)
+  check.eq(cabe_na_outra(Circulo(2.0), Circulo(1.0)), False)
+  check.eq(cabe_na_outra(Retangulo(2.0, 3.0), Circulo(3.0)), True)
+  check.eq(cabe_na_outra(Retangulo(2.0, 3.0), Circulo(2.0)), True)
+  check.eq(cabe_na_outra(Circulo(2.0), Retangulo(3.0, 4.0)), False)
+  check.eq(cabe_na_outra(Circulo(2.0), Retangulo(2.0, 3.0)), False)
 }
