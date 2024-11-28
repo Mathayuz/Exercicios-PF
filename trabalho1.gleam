@@ -169,6 +169,13 @@ pub fn calcula_desempenho(time: String, resultado: Resultado) -> Desempenho {
             False -> Desempenho(time, 1, 0, gols_anfitriao - gols_visitante)
           }
         }
+        visitante -> case gols_visitante > gols_anfitriao {
+          True -> Desempenho(time, 3, 1, gols_visitante - gols_anfitriao)
+          False -> case gols_visitante < gols_anfitriao {
+            True -> Desempenho(time, 0, 0, gols_visitante - gols_anfitriao)
+            False - > Desempenho(time, 1, 0, gols_anfitriao - gols_visitante)
+          }
+        }
       }
     }
     False -> Desempenho(time, 0, 0, 0)
@@ -184,7 +191,7 @@ pub fn calcula_desempenho_lista(time: String, resultados: List(Resultado)) -> Li
 }
 
 /// Calcula o desempenho total de um *time* baseado em uma lista de *desempenhos*.
-pub fn calcula_desempenho_total(desempenhos: List(Desempenho)) -> Desempenho {
+pub fn calcula_desempenho_total(time: String, desempenhos: List(Desempenho)) -> Desempenho {
   todo
 }
 
