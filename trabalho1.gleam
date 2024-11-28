@@ -171,12 +171,16 @@ pub fn calcula_desempenho(time: String, resultado: Resultado) -> Desempenho {
         }
       }
     }
+    False -> Desempenho(time, 0, 0, 0)
   }
 }
 
 /// Calcula todos os desempenhos de um *time* baseado nos *resultados* dos jogos.
 pub fn calcula_desempenho_lista(time: String, resultados: List(Resultado)) -> List(Desempenho) {
-  todo
+  case resultados {
+    [] -> [Desempenho(time, 0, 0, 0)]
+    [primeiro, ..resto] -> [calcula_desempenho(time, primeiro), ..calcula_desempenho_lista(time, resto)]
+  }
 }
 
 /// Calcula o desempenho total de um *time* baseado em uma lista de *desempenhos*.
