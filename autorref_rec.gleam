@@ -41,7 +41,7 @@ pub fn converte_lista(lst: List(String)) -> List(Int) {
   case lst {
     [] -> []
     [primeiro, ..resto] -> case int.parse(primeiro) {
-        Ok(primeiro) -> list.append([primeiro], converte_lista(resto))
+        Ok(primeiro) -> [primeiro, ..converte_lista(resto)]
         Error(Nil) -> converte_lista(resto)
     }
   }
