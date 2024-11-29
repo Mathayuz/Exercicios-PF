@@ -2,6 +2,7 @@ import sgleam/check
 import gleam/string
 import gleam/list
 import gleam/int
+import gleam/order
 
 /// Representa um *resultado* de um jogo, com o nome do time *anfitrião*, a quantidade de gols
 /// do time anfitrião, o nome do time *visitante* e a quantidade de gols do time visitante.
@@ -134,21 +135,6 @@ pub fn lista_times_examples() {
   check.eq(lista_times([Resultado("Sao-Paulo", 1, "Atletico-MG", 2), Resultado("Flamengo", 2, "Palmeiras", 1), Resultado("Palmeiras", 0, "Sao-Paulo", 0), Resultado("Atletico-MG", 1, "Flamengo", 2)]), ["Palmeiras", "Sao-Paulo", "Atletico-MG", "Flamengo"])
 }
 
-/// Recebe uma lista de *times* e uma lista de *resultados* e retorna uma lista de *desempenhos*.
-pub fn lista_desempenhos(times: List(String), resultados: List(Resultado)) -> List(Desempenho) {
-  case times {
-    [] -> []
-    [time, ..resto] -> [calcula_desempenho_total(time, calcula_desempenho_lista(time, resultados)), ..lista_desempenhos(resto, resultados)]
-  }
-}
-
-pub fn lista_desempenhos_examples() {
-  check.eq(lista_desempenhos([], []), [])
-  check.eq(lista_desempenhos(["Palmeiras", "Corinthians"], [Resultado("Palmeiras", 3, "Corinthians", 0)]), [Desempenho("Palmeiras", 3, 1, 3), Desempenho("Corinthians", 0, 0, -3)])
-  check.eq(lista_desempenhos(["Palmeiras", "Corinthians"], [Resultado("Palmeiras", 3, "Corinthians", 0), Resultado("Corinthians", 1, "Palmeiras", 1)]), [Desempenho("Palmeiras", 4, 1, 3), Desempenho("Corinthians", 1, 0, -3)])
-  check.eq(lista_desempenhos(["Sao-Paulo", "Atletico-MG", "Flamengo", "Palmeiras"], [Resultado("Sao-Paulo", 1, "Atletico-MG", 2), Resultado("Flamengo", 2, "Palmeiras", 1), Resultado("Palmeiras", 0, "Sao-Paulo", 0), Resultado("Atletico-MG", 1, "Flamengo", 2)]), [Desempenho("Sao-Paulo", 1, 0, -1), Desempenho("Atletico-MG", 3, 1, 0), Desempenho("Flamengo", 6, 2, 2), Desempenho("Palmeiras", 1, 0, -1)])
-}
-
 /// Verifica se um *time* está em um *resultado*
 pub fn verifica_time(time: String, resultado: Resultado) -> Bool {
   case resultado {
@@ -167,7 +153,7 @@ pub fn verifica_time_examples() {
 pub fn calcula_desempenho(time: String, resultado: Resultado) -> Desempenho {
   case verifica_time(time, resultado) {
     True -> case resultado {
-      Resultado(anfitriao, gols_anfitriao, visitante, gols_visitante) -> case time == anfitriao {
+      Resultado(anfitriao, gols_anfitriao, _visitante, gols_visitante) -> case time == anfitriao {
         True -> case gols_anfitriao > gols_visitante {
           True -> Desempenho(time, 3, 1, gols_anfitriao - gols_visitante)
           False -> case gols_anfitriao < gols_visitante {
@@ -214,7 +200,12 @@ pub fn calcula_desempenho_lista_examples() {
 
 /// Calcula o desempenho total de um *time* baseado em uma lista de *desempenhos*.
 pub fn calcula_desempenho_total(time: String, desempenhos: List(Desempenho)) -> Desempenho {
-  todo
+  case desempenhos {
+    [] -> Desempenho(time, 0, 0, 0)
+    [primeiro, ..resto] -> case primeiro {
+      Desempenho(time, pontos, vitorias, saldo_gols) -> Desempenho(time, pontos + calcula_desempenho_total(time, resto).pontos, vitorias + calcula_desempenho_total(time, resto).vitorias, saldo_gols + calcula_desempenho_total(time, resto).saldo_gols)
+    }
+  }
 }
 
 pub fn calcula_desempenho_total_examples() {
@@ -224,11 +215,48 @@ pub fn calcula_desempenho_total_examples() {
   check.eq(calcula_desempenho_total("Sao-Paulo", [Desempenho("Sao-Paulo", 0, 0, -1), Desempenho("Sao-Paulo", 0, 0, 0), Desempenho("Sao-Paulo", 1, 0, 0), Desempenho("Sao-Paulo", 0, 0, 0)]), Desempenho("Sao-Paulo", 1, 0, -1))
 }
 
+/// Recebe uma lista de *times* e uma lista de *resultados* e retorna uma lista com os *desempenhos*
+/// de todos os times baseado nos resultados de seus jogos.
+pub fn lista_desempenhos(times: List(String), resultados: List(Resultado)) -> List(Desempenho) {
+  case times {
+    [] -> []
+    [time, ..resto] -> [calcula_desempenho_total(time, calcula_desempenho_lista(time, resultados)), ..lista_desempenhos(resto, resultados)]
+  }
+}
+
+pub fn lista_desempenhos_examples() {
+  check.eq(lista_desempenhos([], []), [])
+  check.eq(lista_desempenhos(["Palmeiras", "Corinthians"], [Resultado("Palmeiras", 3, "Corinthians", 0)]), [Desempenho("Palmeiras", 3, 1, 3), Desempenho("Corinthians", 0, 0, -3)])
+  check.eq(lista_desempenhos(["Palmeiras", "Corinthians"], [Resultado("Palmeiras", 3, "Corinthians", 0), Resultado("Corinthians", 1, "Palmeiras", 1)]), [Desempenho("Palmeiras", 4, 1, 3), Desempenho("Corinthians", 1, 0, -3)])
+  check.eq(lista_desempenhos(["Sao-Paulo", "Atletico-MG", "Flamengo", "Palmeiras"], [Resultado("Sao-Paulo", 1, "Atletico-MG", 2), Resultado("Flamengo", 2, "Palmeiras", 1), Resultado("Palmeiras", 0, "Sao-Paulo", 0), Resultado("Atletico-MG", 1, "Flamengo", 2)]), [Desempenho("Sao-Paulo", 1, 0, -1), Desempenho("Atletico-MG", 3, 1, 0), Desempenho("Flamengo", 6, 2, 2), Desempenho("Palmeiras", 1, 0, -1)])
+}
+
 /// Ordena os times baseado em seus desempenhos.
 /// A ordenação é feita pela quantidade de pontos, e em caso de empate, pelo número de vitórias,
 /// depois pelo saldo de gols e por fim pela ordem alfabética.
 pub fn ordena_times(desempenhos: List(Desempenho)) -> List(Desempenho) {
-  []
+  todo
+}
+
+pub fn ordena_times_examples() {
+  check.eq(ordena_times([]), [])
+  check.eq(ordena_times([Desempenho("Palmeiras", 3, 1, 3)]), [Desempenho("Palmeiras", 3, 1, 3)])
+  check.eq(ordena_times([Desempenho("Palmeiras", 3, 1, 3), Desempenho("Corinthians", 0, 0, -3)]), [Desempenho("Palmeiras", 3, 1, 3), Desempenho("Corinthians", 0, 0, -3)])
+  check.eq(ordena_times([Desempenho("Corinthians", 1, 0, -3), Desempenho("Palmeiras", 4, 1, 3)]), [Desempenho("Palmeiras", 4, 1, 3), Desempenho("Corinthians", 1, 0, -3)])
+  check.eq(ordena_times([Desempenho("Sao-Paulo", 1, 0, -1), Desempenho("Atletico-MG", 3, 1, 0), Desempenho("Flamengo", 6, 2, 2), Desempenho("Palmeiras", 1, 0, -1)]), [Desempenho("Flamengo", 6, 2, 2), Desempenho("Atletico-MG", 3, 1, 0), Desempenho("Palmeiras", 1, 0, -1), Desempenho("Sao-Paulo", 1, 0, -1)])
+}
+
+/// Transforma uma lista de *desempenhos* em uma lista de strings no formato "time pontos vitórias saldo de gols".
+pub fn desempenhos_para_strings(desempenhos: List(Desempenho)) -> List(String) {
+  todo
+}
+
+pub fn desempenhos_para_strings_examples() {
+  check.eq(desempenhos_para_strings([]), [])
+  check.eq(desempenhos_para_strings([Desempenho("Palmeiras", 3, 1, 3)]), ["Palmeiras 3 1 3"])
+  check.eq(desempenhos_para_strings([Desempenho("Palmeiras", 3, 1, 3), Desempenho("Corinthians", 0, 0, -3)]), ["Palmeiras 3 1 3", "Corinthians 0 0 -3"])
+  check.eq(desempenhos_para_strings([Desempenho("Palmeiras", 4, 1, 3), Desempenho("Corinthians", 1, 0, -3)]), ["Palmeiras 4 1 3", "Corinthians 1 0 -3"])
+  check.eq(desempenhos_para_strings([Desempenho("Flamengo", 6, 2, 2), Desempenho("Atletico-MG", 3, 1, 0), Desempenho("Palmeiras", 1, 0, -1), Desempenho("Sao-Paulo", 1, 0, -1)]), ["Flamengo 6 2 2", "Atletico-MG 3 1 0", "Palmeiras 1 0 -1", "Sao-Paulo 1 0 -1"])
 }
 
 /// Recebe os *resultados* dos jogos e retorna a *classificação* dos times.
@@ -238,7 +266,12 @@ pub fn ordena_times(desempenhos: List(Desempenho)) -> List(Desempenho) {
 /// Os resultados são strings no formato "anfitrião gols visitante gols".
 /// A classificação é uma lista de strings no formato "time pontos vitórias saldo de gols".
 pub fn monta_classificacao(resultados: List(String)) -> Result(List(String), Erros) {
-  todo
+  case converte_resultados(resultados) {
+    Ok(resultados) -> case lista_desempenhos(lista_times(resultados), resultados) {
+      desempenhos -> Ok(desempenhos_para_strings(ordena_times(desempenhos)))
+    }
+    Error(erro) -> Error(erro)
+  }
 }
 
 pub fn monta_classificacao_examples() {
