@@ -138,7 +138,7 @@ pub fn lista_times_examples() {
 pub fn lista_desempenhos(times: List(String), resultados: List(Resultado)) -> List(Desempenho) {
   case times {
     [] -> []
-    [time, ..resto] -> [calcula_desempenho_total(time, resultados), ..lista_desempenhos(resto, resultados)]
+    [time, ..resto] -> [calcula_desempenho_total(time, calcula_desempenho_lista(time, resultados)), ..lista_desempenhos(resto, resultados)]
   }
 }
 
@@ -163,23 +163,23 @@ pub fn verifica_time_examples() {
 }
 
 
-/// Calcula o *desempenho* de um *time* baseado em um *resultado*
+/// Calcula o desempenho de um *time* baseado em um único *resultado*
 pub fn calcula_desempenho(time: String, resultado: Resultado) -> Desempenho {
   case verifica_time(time, resultado) {
     True -> case resultado {
-      Resultado(anfitriao, gols_anfitriao, visitante, gols_visitante) -> case time {
-        anfitriao -> case gols_anfitriao > gols_visitante {
+      Resultado(anfitriao, gols_anfitriao, visitante, gols_visitante) -> case time == anfitriao {
+        True -> case gols_anfitriao > gols_visitante {
           True -> Desempenho(time, 3, 1, gols_anfitriao - gols_visitante)
           False -> case gols_anfitriao < gols_visitante {
             True -> Desempenho(time, 0, 0, gols_anfitriao - gols_visitante)
-            False -> Desempenho(time, 1, 0, gols_anfitriao - gols_visitante)
+            False -> Desempenho(time, 1, 0, 0)
           }
         }
-        visitante -> case gols_visitante > gols_anfitriao {
+        False -> case gols_visitante > gols_anfitriao {
           True -> Desempenho(time, 3, 1, gols_visitante - gols_anfitriao)
           False -> case gols_visitante < gols_anfitriao {
             True -> Desempenho(time, 0, 0, gols_visitante - gols_anfitriao)
-            False - > Desempenho(time, 1, 0, gols_anfitriao - gols_visitante)
+            False -> Desempenho(time, 1, 0, 0)
           }
         }
       }
@@ -197,7 +197,7 @@ pub fn calcula_desempenho_examples() {
   check.eq(calcula_desempenho("Corinthians", Resultado("Palmeiras", 1, "Corinthians", 1)), Desempenho("Corinthians", 1, 0, 0))
 }
 
-/// Calcula todos os desempenhos de um *time* baseado nos *resultados* dos jogos.
+/// Calcula todos os desempenhos de um único *time* baseado nos *resultados* de seus jogos.
 pub fn calcula_desempenho_lista(time: String, resultados: List(Resultado)) -> List(Desempenho) {
   case resultados {
     [] -> [Desempenho(time, 0, 0, 0)]
@@ -207,9 +207,9 @@ pub fn calcula_desempenho_lista(time: String, resultados: List(Resultado)) -> Li
 
 pub fn calcula_desempenho_lista_examples() {
   check.eq(calcula_desempenho_lista("Palmeiras", []), [Desempenho("Palmeiras", 0, 0, 0)])
-  check.eq(calcula_desempenho_lista("Palmeiras", [Resultado("Palmeiras", 3, "Corinthians", 0)]), [Desempenho("Palmeiras", 3, 1, 3)])
-  check.eq(calcula_desempenho_lista("Palmeiras", [Resultado("Palmeiras", 3, "Corinthians", 0), Resultado("Corinthians", 1, "Palmeiras", 1)]), [Desempenho("Palmeiras", 3, 1, 3), Desempenho("Palmeiras", 1, 0, 0)])
-  check.eq(calcula_desempenho_lista("Sao-Paulo", [Resultado("Sao-Paulo", 1, "Atletico-MG", 2), Resultado("Flamengo", 2, "Palmeiras", 1), Resultado("Palmeiras", 0, "Sao-Paulo", 0), Resultado("Atletico-MG", 1, "Flamengo", 2)]), [Desempenho("Sao-Paulo", 0, 0, -1), Desempenho("Sao-Paulo", 0, 0, 0), Desempenho("Sao-Paulo", 1, 0, 0), Desempenho("Sao-Paulo", 0, 0, 0)])
+  check.eq(calcula_desempenho_lista("Palmeiras", [Resultado("Palmeiras", 3, "Corinthians", 0)]), [Desempenho("Palmeiras", 3, 1, 3), Desempenho("Palmeiras", 0, 0, 0)])
+  check.eq(calcula_desempenho_lista("Palmeiras", [Resultado("Palmeiras", 3, "Corinthians", 0), Resultado("Corinthians", 1, "Palmeiras", 1)]), [Desempenho("Palmeiras", 3, 1, 3), Desempenho("Palmeiras", 1, 0, 0), Desempenho("Palmeiras", 0, 0, 0)])
+  check.eq(calcula_desempenho_lista("Sao-Paulo", [Resultado("Sao-Paulo", 1, "Atletico-MG", 2), Resultado("Flamengo", 2, "Palmeiras", 1), Resultado("Palmeiras", 0, "Sao-Paulo", 0), Resultado("Atletico-MG", 1, "Flamengo", 2)]), [Desempenho("Sao-Paulo", 0, 0, -1), Desempenho("Sao-Paulo", 0, 0, 0), Desempenho("Sao-Paulo", 1, 0, 0), Desempenho("Sao-Paulo", 0, 0, 0), Desempenho("Sao-Paulo", 0, 0, 0)])
 }
 
 /// Calcula o desempenho total de um *time* baseado em uma lista de *desempenhos*.
@@ -238,10 +238,7 @@ pub fn ordena_times(desempenhos: List(Desempenho)) -> List(Desempenho) {
 /// Os resultados são strings no formato "anfitrião gols visitante gols".
 /// A classificação é uma lista de strings no formato "time pontos vitórias saldo de gols".
 pub fn monta_classificacao(resultados: List(String)) -> Result(List(String), Erros) {
-  case converte_resultados(resultados) {
-    Ok(resultados) -> Ok([])
-    Error(erro) -> Error(erro)
-  }
+  todo
 }
 
 pub fn monta_classificacao_examples() {
