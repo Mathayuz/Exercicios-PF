@@ -812,40 +812,40 @@ pub fn monta_classificacao(
 pub fn monta_classificacao_examples() {
   check.eq(monta_classificacao([]), Ok([]))
   check.eq(
-    converte_resultados(["Palmeiras 3 Corinthians 0 0"]),
+    monta_classificacao(["Palmeiras 3 Corinthians 0 0"]),
     Error(QuantidadeCamposInvalida),
   )
   check.eq(
-    converte_resultados(["Palmeiras 3 Corinthians"]),
+    monta_classificacao(["Palmeiras 3 Corinthians"]),
     Error(QuantidadeCamposInvalida),
   )
   check.eq(
-    converte_resultados(["Palmeiras a Corinthians 0"]),
+    monta_classificacao(["Palmeiras a Corinthians 0"]),
     Error(NaoEhNumeroAnfitriao),
   )
   check.eq(
-    converte_resultados(["Palmeiras 3 Corinthians a"]),
+    monta_classificacao(["Palmeiras 3 Corinthians a"]),
     Error(NaoEhNumeroVisitante),
   )
   check.eq(
-    converte_resultados(["Palmeiras a Corinthians b"]),
+    monta_classificacao(["Palmeiras a Corinthians b"]),
     Error(NaoEhNumeroAnfitriaoVisitante),
   )
   check.eq(
-    converte_resultados(["Palmeiras -1 Corinthians 0"]),
+    monta_classificacao(["Palmeiras -1 Corinthians 0"]),
     Error(NumeroInvalidoAnfitriao),
   )
   check.eq(
-    converte_resultados(["Palmeiras 3 Corinthians -1"]),
+    monta_classificacao(["Palmeiras 3 Corinthians -1"]),
     Error(NumeroInvalidoVisitante),
   )
   check.eq(
-    converte_resultados(["Palmeiras -3 Corinthians -1"]),
+    monta_classificacao(["Palmeiras -3 Corinthians -1"]),
     Error(NumeroInvalidoAnfitriaoVisitante),
   )
-  check.eq(converte_resultados(["Palmeiras 3 Palmeiras 0"]), Error(MesmoTime))
+  check.eq(monta_classificacao(["Palmeiras 3 Palmeiras 0"]), Error(MesmoTime))
   check.eq(
-    converte_resultados([
+    monta_classificacao([
       "Palmeiras 3 Corinthians 0", "Corinthians 1 Palmeiras 1",
       "Palmeiras 3 Corinthians 0", "Corinthians 1 Corinthians 1",
     ]),
