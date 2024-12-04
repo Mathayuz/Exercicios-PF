@@ -1,33 +1,27 @@
 import sgleam/check
+import gleam/int
 
-/// Verifica os 2 menores números de cada uma das listas e devolve a diferença entre eles,
-/// depois verifica os 2 segundos menores números de cada uma das listas e soma com o valor obtido
-/// anteriormente, e assim continua até o fim das duas listas, no fim retorna a soma das diferenças entre
-/// os menores valores da cada lista
 pub fn soma_menores(lista1: List(Int), lista2: List(Int)) -> Result(Int, Nil) {
   case lista1, lista2 {
     [], [] -> Error(Nil)
-    [primeiro1, ..resto1], [primeiro2, ..resto2] -> case encontra_menor(lista1), encontra_menor(lista2) {
-      Ok(menor1), Ok(menor2) -> case 
+    [primeiro1, ..resto1], [primeiro2, ..resto2] -> case other_sort(lista1), other_sort(lista2) {
+      Ok(lista1_ordenada), Ok(lista2_ordenada) -> case lista1_ordenada, lista2_ordenada {
+        [], [] -> Ok([])
+        [primeiro1, ..resto1], [primeiro2, ..resto2] -> case remove(primeiro1, lista1), remove(primeiro2, lista2) {
+          Ok(lista1_sem_primeiro), Ok(lista2_sem_primeiro) -> Ok(soma_lista([int.absolute_value(primeiro1 - primeiro2), ..soma_menores(lista1_sem_primeiro, lista2_sem_primeiro)]))
+          _, _ -> Error(Nil)
+        }
+      }
+      _, _ -> Error(Nil)
     }
   }
 }
 
 pub fn soma_menores_examples() {
-  check.eq(soma_menores([3], [1]), 2)
-  check.eq(soma_menores([3], [3]), 0)
-  check.eq(soma_menores([3], [4]), 1)
-  check.eq(soma_menores([3, 4, 2, 10], [4, 5, 16, 4]), 10)
-}
-
-pub fn lista_menores(x: Int, y: Int) -> List(Int) {
-  [x + y]
-}
-
-pub fn lista_menores_examples() {
-  check.eq(lista_menores(1, 2), [3])
-  check.eq(lista_menores(2, 2), [4])
-  check.eq(lista_menores(2, 8), [10])
+  check.eq(soma_menores([3], [1]), Ok(2))
+  check.eq(soma_menores([3], [3]), Ok(2))
+  check.eq(soma_menores([3], [4]), Ok(2))
+  check.eq(soma_menores([3, 4, 2, 10], [4, 5, 16, 4]), Ok(2))
 }
 
 pub fn soma_lista(lista: List(Int)) -> Int {
@@ -42,6 +36,29 @@ pub fn soma_lista_examples() {
   check.eq(soma_lista([1]), 1)
   check.eq(soma_lista([1, 2]), 3)
   check.eq(soma_lista([3, 1, 2]), 6)
+}
+
+pub fn other_sort(list: List(Int)) -> Result(List(Int), Nil) {
+  case list {
+    [] -> Ok([])
+    [primeiro] -> Ok([primeiro])
+    [primeiro, ..resto] -> case encontra_menor(resto) {
+      Ok(menor) -> case primeiro < menor {
+        True -> case other_sort(resto) {
+          Ok(resto_ordenado) -> Ok([primeiro, ..resto_ordenado])
+          Error(erro) -> Error(erro)
+        }
+        False -> case remove(menor, list) {
+          Ok(list_sem_menor) -> case other_sort(list_sem_menor) {
+            Ok(resto_ordenado) -> Ok([menor, ..resto_ordenado])
+            Error(erro) -> Error(erro)
+          }
+          Error(erro) -> Error(erro)
+        }
+      }
+      Error(erro) -> Error(erro)
+    }
+  }
 }
 
 pub fn encontra_menor(lista: List(Int)) -> Result(Int, Nil) {
