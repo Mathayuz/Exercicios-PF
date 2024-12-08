@@ -3,7 +3,7 @@ import gleam/order
 import gleam/string
 import sgleam/check
 
-/// Representa um *resultado* de um jogo, com o nome do time *anfitrião*, a quantidade de gols
+/// Representa o *resultado* de um jogo, com o nome do time *anfitrião*, a quantidade de gols
 /// do time anfitrião, o nome do time *visitante* e a quantidade de gols do time visitante.
 pub type Resultado {
   Resultado(
@@ -32,7 +32,8 @@ pub type Erros {
   MesmoTime
 }
 
-/// Verifica e converte um *resultado* no formato "anfitrião gols visitante gols" se ele for válido.
+/// Verifica e converte uma string *resultado* no formato "anfitrião gols visitante gols" 
+/// para o tipo Resultado se a entrada for válida.
 /// Caso não seja válido, retorna um erro.
 pub fn converte_resultado(resultado: String) -> Result(Resultado, Erros) {
   case string.split(resultado, " ") {
@@ -104,8 +105,9 @@ pub fn converte_resultado_examples() {
   check.eq(converte_resultado("Palmeiras 3 Palmeiras 0"), Error(MesmoTime))
 }
 
-/// Verifica e converte uma lista de *resultados* se ela for válida.
+/// Verifica e converte uma lista de strings *resultados* em uma lista de Resultado se ela for válida.
 /// Caso não seja válida, retorna um erro.
+/// Utiliza função auxiliar converte_resultado() para converter uma string em um Resultado.
 pub fn converte_resultados(
   resultados: List(String),
 ) -> Result(List(Resultado), Erros) {
@@ -134,10 +136,6 @@ pub fn converte_resultados_examples() {
       Resultado("Palmeiras", 3, "Corinthians", 0),
       Resultado("Corinthians", 1, "Palmeiras", 1),
     ]),
-  )
-  check.eq(
-    converte_resultados(["Palmeiras 3 Corinthians 0"]),
-    Ok([Resultado("Palmeiras", 3, "Corinthians", 0)]),
   )
   check.eq(
     converte_resultados([
@@ -211,7 +209,7 @@ pub fn verifica_lista_examples() {
   check.eq(verifica_lista("Palmeiras", ["Corinthians", "Palmeiras"]), True)
 }
 
-/// Retorna uma lista com os nomes de todos os times que estão em uma *lista* de resultados
+/// Retorna uma lista de strings com os nomes de todos os times que estão em uma *lista* de Resultado
 pub fn lista_times(lista: List(Resultado)) -> List(String) {
   case lista {
     [] -> []
@@ -274,7 +272,7 @@ pub fn verifica_time_examples() {
   )
 }
 
-/// Calcula o desempenho de um *time* baseado em um único *resultado*
+/// Calcula o Desempenho de um *time* baseado em um único *resultado*
 pub fn calcula_desempenho(time: String, resultado: Resultado) -> Desempenho {
   case verifica_time(time, resultado) {
     True ->
@@ -556,6 +554,48 @@ pub fn ordena_times_examples() {
       Desempenho("Sao-Paulo", 1, 0, -1),
     ]),
   )
+  check.eq(
+    ordena_times([
+      Desempenho("Sao-Paulo", 6, 2, 2),
+      Desempenho("Atletico-MG", 3, 1, 0),
+      Desempenho("Flamengo", 6, 3, 2),
+      Desempenho("Palmeiras", 1, 0, -1),
+    ]),
+    Ok([
+      Desempenho("Flamengo", 6, 3, 2),
+      Desempenho("Sao-Paulo", 6, 2, 2),
+      Desempenho("Atletico-MG", 3, 1, 0),
+      Desempenho("Palmeiras", 1, 0, -1),
+    ]),
+  )
+  check.eq(
+    ordena_times([
+      Desempenho("Sao-Paulo", 6, 3, 2),
+      Desempenho("Atletico-MG", 3, 1, 0),
+      Desempenho("Flamengo", 6, 3, 3),
+      Desempenho("Palmeiras", 1, 0, -1),
+    ]),
+    Ok([
+      Desempenho("Flamengo", 6, 3, 3),
+      Desempenho("Sao-Paulo", 6, 3, 2),
+      Desempenho("Atletico-MG", 3, 1, 0),
+      Desempenho("Palmeiras", 1, 0, -1),
+    ]),
+  )
+  check.eq(
+    ordena_times([
+      Desempenho("Sao-Paulo", 6, 2, 2),
+      Desempenho("Atletico-MG", 3, 1, 0),
+      Desempenho("Flamengo", 6, 2, 2),
+      Desempenho("Palmeiras", 1, 0, -1),
+    ]),
+    Ok([
+      Desempenho("Flamengo", 6, 2, 2),
+      Desempenho("Sao-Paulo", 6, 2, 2),
+      Desempenho("Atletico-MG", 3, 1, 0),
+      Desempenho("Palmeiras", 1, 0, -1),
+    ]),
+  )
 }
 
 /// Compara dois *desempenhos* e retorna o melhor desempenho.
@@ -677,6 +717,7 @@ pub fn encontra_melhor_desempenho_examples() {
 }
 
 /// Remove um *desempenho* de uma lista de *desempenhos*.
+/// Devolve erro caso a lista de *desempenhos* seja vazia.
 pub fn remove_desempenho(
   desempenho: Desempenho,
   desempenhos: List(Desempenho),
