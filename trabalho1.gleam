@@ -1,10 +1,22 @@
+// Matheus Cenerini Jacomini RA: 134700, Caetano Vendrame Mantovani RA: 135846.
+
 import gleam/int
 import gleam/order
 import gleam/string
 import sgleam/check
 
-/// Representa o *resultado* de um jogo, com o nome do time *anfitrião*, a quantidade de gols
-/// do time anfitrião, o nome do time *visitante* e a quantidade de gols do time visitante.
+// Desenvolver um sistema para gerar a classificação dos times participantes
+// de um campeonato de futebol, com base nos resultados de suas partidas.
+// O sistema de pontuação dos jogos é dado por: uma vitória vale 3 pontos,
+// um empate vale 1 ponto e uma derrota vale 0 pontos.
+// Os critérios para desempate entre os times são: quantidade de pontos, número de vitórias,
+// saldo de gols e ordem alfabética consecutivamente.
+
+// A classificação dos times deve ser ter o formato de um tabela, onde estarão 
+// dispostos todos os times que participaram de um jogo do campeonato de maneira ordenada.
+// O time com melhor desempenho deve estar no topo da tabela, e os times subsequentes devem
+// ser colocados em suas respectivas posições na tabela, seguindo os critérios de desempate.
+
 pub type Resultado {
   Resultado(
     anfitriao: String,
@@ -14,100 +26,34 @@ pub type Resultado {
   )
 }
 
-/// Representa o *desempenho* de um time, com o nome do time, a quantidade de *pontos*,
-/// a quantidade de *vitórias* e o *saldo de gols*.
+/// O desempenho de um time, com o nome do time, a quantidade de pontos,
+/// a quantidade de vitórias e o saldo de gols.
 pub type Desempenho {
   Desempenho(time: String, pontos: Int, vitorias: Int, saldo_gols: Int)
 }
 
-/// Representa os *erros* possíveis ao montar a classificação dos times.
+/// Os possíveis erros que podem acontecer ao montar a classificação dos times.
 pub type Erros {
+  // Gols do anfitrião não é um número.
   NaoEhNumeroAnfitriao
+  // Gols do visitante não é um número.
   NaoEhNumeroVisitante
+  // Gols do anfitrião e do visitante não são números.
   NaoEhNumeroAnfitriaoVisitante
+  // Gols do anfitrião é um número inválido.
   NumeroInvalidoAnfitriao
+  // Gols do visitante é um número inválido.
   NumeroInvalidoVisitante
+  // Gols do anfitrião e do visitante são números inválidos.
   NumeroInvalidoAnfitriaoVisitante
+  // Quantidade de campos de um resultado inválida.
   QuantidadeCamposInvalida
+  // Mesmo time dos dois lados de um resultado.
   MesmoTime
 }
 
-/// Verifica e converte uma string *resultado* no formato "anfitrião gols visitante gols" 
-/// para o tipo Resultado se a entrada for válida.
-/// Caso não seja válido, retorna um erro.
-pub fn converte_resultado(resultado: String) -> Result(Resultado, Erros) {
-  case string.split(resultado, " ") {
-    [anfitriao, gols1, visitante, gols2] ->
-      case int.parse(gols1), int.parse(gols2) {
-        Ok(gols1), Ok(gols2) ->
-          case gols1 < 0 && gols2 < 0 {
-            True -> Error(NumeroInvalidoAnfitriaoVisitante)
-            False ->
-              case gols1 < 0 {
-                True -> Error(NumeroInvalidoAnfitriao)
-                False ->
-                  case gols2 < 0 {
-                    True -> Error(NumeroInvalidoVisitante)
-                    False ->
-                      case anfitriao == visitante {
-                        True -> Error(MesmoTime)
-                        False ->
-                          Ok(Resultado(anfitriao, gols1, visitante, gols2))
-                      }
-                  }
-              }
-          }
-        Error(Nil), Ok(_) -> Error(NaoEhNumeroAnfitriao)
-        Ok(_), Error(Nil) -> Error(NaoEhNumeroVisitante)
-        Error(Nil), Error(Nil) -> Error(NaoEhNumeroAnfitriaoVisitante)
-      }
-    _ -> Error(QuantidadeCamposInvalida)
-  }
-}
-
-pub fn converte_resultado_examples() {
-  check.eq(
-    converte_resultado("Palmeiras 3 Corinthians 0"),
-    Ok(Resultado("Palmeiras", 3, "Corinthians", 0)),
-  )
-  check.eq(
-    converte_resultado("Palmeiras 3 Corinthians"),
-    Error(QuantidadeCamposInvalida),
-  )
-  check.eq(
-    converte_resultado("Palmeiras 3 Corinthians 0 0"),
-    Error(QuantidadeCamposInvalida),
-  )
-  check.eq(
-    converte_resultado("Palmeiras a Corinthians 0"),
-    Error(NaoEhNumeroAnfitriao),
-  )
-  check.eq(
-    converte_resultado("Palmeiras 3 Corinthians a"),
-    Error(NaoEhNumeroVisitante),
-  )
-  check.eq(
-    converte_resultado("Palmeiras a Corinthians b"),
-    Error(NaoEhNumeroAnfitriaoVisitante),
-  )
-  check.eq(
-    converte_resultado("Palmeiras -1 Corinthians 0"),
-    Error(NumeroInvalidoAnfitriao),
-  )
-  check.eq(
-    converte_resultado("Palmeiras 3 Corinthians -1"),
-    Error(NumeroInvalidoVisitante),
-  )
-  check.eq(
-    converte_resultado("Palmeiras -3 Corinthians -1"),
-    Error(NumeroInvalidoAnfitriaoVisitante),
-  )
-  check.eq(converte_resultado("Palmeiras 3 Palmeiras 0"), Error(MesmoTime))
-}
-
-/// Verifica e converte uma lista de strings *resultados* em uma lista de Resultado se ela for válida.
-/// Caso não seja válida, retorna um erro.
-/// Utiliza função auxiliar converte_resultado() para converter uma string em um Resultado.
+/// Converte uma lista de *resultados* em uma lista do tipo Resultado se ela for válida,
+/// caso não seja válida, produz um erro.
 pub fn converte_resultados(
   resultados: List(String),
 ) -> Result(List(Resultado), Erros) {
@@ -191,32 +137,87 @@ pub fn converte_resultados_examples() {
   )
 }
 
-/// Verifica se um *time* está em uma *lista*
-pub fn verifica_lista(time: String, lista: List(String)) -> Bool {
-  case lista {
-    [] -> False
-    [primeiro, ..resto] ->
-      case primeiro == time {
-        True -> True
-        False -> verifica_lista(time, resto)
+/// Converte um *resultado* no formato "anfitrião gols visitante gols" 
+/// para o tipo Resultado se a entrada for válida,
+/// caso não seja válida, produz um erro.
+pub fn converte_resultado(resultado: String) -> Result(Resultado, Erros) {
+  case string.split(resultado, " ") {
+    [anfitriao, gols1, visitante, gols2] ->
+      case int.parse(gols1), int.parse(gols2) {
+        Ok(gols1), Ok(gols2) ->
+          case gols1 < 0 && gols2 < 0 {
+            True -> Error(NumeroInvalidoAnfitriaoVisitante)
+            False ->
+              case gols1 < 0 {
+                True -> Error(NumeroInvalidoAnfitriao)
+                False ->
+                  case gols2 < 0 {
+                    True -> Error(NumeroInvalidoVisitante)
+                    False ->
+                      case anfitriao == visitante {
+                        True -> Error(MesmoTime)
+                        False ->
+                          Ok(Resultado(anfitriao, gols1, visitante, gols2))
+                      }
+                  }
+              }
+          }
+        Error(Nil), Ok(_) -> Error(NaoEhNumeroAnfitriao)
+        Ok(_), Error(Nil) -> Error(NaoEhNumeroVisitante)
+        Error(Nil), Error(Nil) -> Error(NaoEhNumeroAnfitriaoVisitante)
       }
+    _ -> Error(QuantidadeCamposInvalida)
   }
 }
 
-pub fn verifica_lista_examples() {
-  check.eq(verifica_lista("Palmeiras", []), False)
-  check.eq(verifica_lista("Palmeiras", ["Corinthians", "Sao-Paulo"]), False)
-  check.eq(verifica_lista("Palmeiras", ["Corinthians", "Palmeiras"]), True)
+pub fn converte_resultado_examples() {
+  check.eq(
+    converte_resultado("Palmeiras 3 Corinthians 0"),
+    Ok(Resultado("Palmeiras", 3, "Corinthians", 0)),
+  )
+  check.eq(
+    converte_resultado("Palmeiras 3 Corinthians"),
+    Error(QuantidadeCamposInvalida),
+  )
+  check.eq(
+    converte_resultado("Palmeiras 3 Corinthians 0 0"),
+    Error(QuantidadeCamposInvalida),
+  )
+  check.eq(
+    converte_resultado("Palmeiras a Corinthians 0"),
+    Error(NaoEhNumeroAnfitriao),
+  )
+  check.eq(
+    converte_resultado("Palmeiras 3 Corinthians a"),
+    Error(NaoEhNumeroVisitante),
+  )
+  check.eq(
+    converte_resultado("Palmeiras a Corinthians b"),
+    Error(NaoEhNumeroAnfitriaoVisitante),
+  )
+  check.eq(
+    converte_resultado("Palmeiras -1 Corinthians 0"),
+    Error(NumeroInvalidoAnfitriao),
+  )
+  check.eq(
+    converte_resultado("Palmeiras 3 Corinthians -1"),
+    Error(NumeroInvalidoVisitante),
+  )
+  check.eq(
+    converte_resultado("Palmeiras -3 Corinthians -1"),
+    Error(NumeroInvalidoAnfitriaoVisitante),
+  )
+  check.eq(converte_resultado("Palmeiras 3 Palmeiras 0"), Error(MesmoTime))
 }
 
-/// Retorna uma lista de strings com os nomes de todos os times que estão em uma *lista* de Resultado
+/// Produz uma lista com os nomes de todos os times que estão em uma *lista* de Resultado.
 pub fn lista_times(lista: List(Resultado)) -> List(String) {
   case lista {
     [] -> []
     [Resultado(anfitriao, _, visitante, _), ..resto] ->
       case
-        verifica_lista(anfitriao, lista_times(resto)),
-        verifica_lista(visitante, lista_times(resto))
+        verifica_lista_times(anfitriao, lista_times(resto)),
+        verifica_lista_times(visitante, lista_times(resto))
       {
         False, False -> [anfitriao, visitante, ..lista_times(resto)]
         False, True -> [anfitriao, ..lista_times(resto)]
@@ -249,7 +250,35 @@ pub fn lista_times_examples() {
   )
 }
 
-/// Verifica se um *time* está em um *resultado*
+/// Verifica se um *time* está em uma *lista* de times.
+pub fn verifica_lista_times(time: String, lista: List(String)) -> Bool {
+  case lista {
+    [] -> False
+    [primeiro, ..resto] ->
+      case primeiro == time {
+        True -> True
+        False -> verifica_lista_times(time, resto)
+      }
+  }
+}
+
+pub fn verifica_lista_times_examples() {
+  check.eq(verifica_lista_times("Palmeiras", []), False)
+  check.eq(
+    verifica_lista_times("Palmeiras", ["Palmeiras", "Corinthians"]),
+    True,
+  )
+  check.eq(
+    verifica_lista_times("Palmeiras", ["Corinthians", "Sao-Paulo"]),
+    False,
+  )
+  check.eq(
+    verifica_lista_times("Palmeiras", ["Corinthians", "Palmeiras"]),
+    True,
+  )
+}
+
+/// Verifica se um *time* está em um *resultado*.
 pub fn verifica_time(time: String, resultado: Resultado) -> Bool {
   case resultado {
     Resultado(anfitriao, _, visitante, _) ->
@@ -272,7 +301,60 @@ pub fn verifica_time_examples() {
   )
 }
 
-/// Calcula o Desempenho de um *time* baseado em um único *resultado*
+/// Calcula todos os desempenhos de um *time* baseado nos *resultados* de seus jogos e
+/// produz uma lista com esses desempenhos.
+pub fn calcula_desempenho_lista(
+  time: String,
+  resultados: List(Resultado),
+) -> List(Desempenho) {
+  case resultados {
+    [] -> [Desempenho(time, 0, 0, 0)]
+    [primeiro, ..resto] -> [
+      calcula_desempenho(time, primeiro),
+      ..calcula_desempenho_lista(time, resto)
+    ]
+  }
+}
+
+pub fn calcula_desempenho_lista_examples() {
+  check.eq(calcula_desempenho_lista("Palmeiras", []), [
+    Desempenho("Palmeiras", 0, 0, 0),
+  ])
+  check.eq(
+    calcula_desempenho_lista("Palmeiras", [
+      Resultado("Palmeiras", 3, "Corinthians", 0),
+    ]),
+    [Desempenho("Palmeiras", 3, 1, 3), Desempenho("Palmeiras", 0, 0, 0)],
+  )
+  check.eq(
+    calcula_desempenho_lista("Palmeiras", [
+      Resultado("Palmeiras", 3, "Corinthians", 0),
+      Resultado("Corinthians", 1, "Palmeiras", 1),
+    ]),
+    [
+      Desempenho("Palmeiras", 3, 1, 3),
+      Desempenho("Palmeiras", 1, 0, 0),
+      Desempenho("Palmeiras", 0, 0, 0),
+    ],
+  )
+  check.eq(
+    calcula_desempenho_lista("Sao-Paulo", [
+      Resultado("Sao-Paulo", 1, "Atletico-MG", 2),
+      Resultado("Flamengo", 2, "Palmeiras", 1),
+      Resultado("Palmeiras", 0, "Sao-Paulo", 0),
+      Resultado("Atletico-MG", 1, "Flamengo", 2),
+    ]),
+    [
+      Desempenho("Sao-Paulo", 0, 0, -1),
+      Desempenho("Sao-Paulo", 0, 0, 0),
+      Desempenho("Sao-Paulo", 1, 0, 0),
+      Desempenho("Sao-Paulo", 0, 0, 0),
+      Desempenho("Sao-Paulo", 0, 0, 0),
+    ],
+  )
+}
+
+/// Calcula o desempenho de um *time* baseado em um *resultado*.
 pub fn calcula_desempenho(time: String, resultado: Resultado) -> Desempenho {
   case verifica_time(time, resultado) {
     True ->
@@ -341,59 +423,7 @@ pub fn calcula_desempenho_examples() {
   )
 }
 
-/// Calcula todos os desempenhos de um único *time* baseado nos *resultados* de seus jogos.
-pub fn calcula_desempenho_lista(
-  time: String,
-  resultados: List(Resultado),
-) -> List(Desempenho) {
-  case resultados {
-    [] -> [Desempenho(time, 0, 0, 0)]
-    [primeiro, ..resto] -> [
-      calcula_desempenho(time, primeiro),
-      ..calcula_desempenho_lista(time, resto)
-    ]
-  }
-}
-
-pub fn calcula_desempenho_lista_examples() {
-  check.eq(calcula_desempenho_lista("Palmeiras", []), [
-    Desempenho("Palmeiras", 0, 0, 0),
-  ])
-  check.eq(
-    calcula_desempenho_lista("Palmeiras", [
-      Resultado("Palmeiras", 3, "Corinthians", 0),
-    ]),
-    [Desempenho("Palmeiras", 3, 1, 3), Desempenho("Palmeiras", 0, 0, 0)],
-  )
-  check.eq(
-    calcula_desempenho_lista("Palmeiras", [
-      Resultado("Palmeiras", 3, "Corinthians", 0),
-      Resultado("Corinthians", 1, "Palmeiras", 1),
-    ]),
-    [
-      Desempenho("Palmeiras", 3, 1, 3),
-      Desempenho("Palmeiras", 1, 0, 0),
-      Desempenho("Palmeiras", 0, 0, 0),
-    ],
-  )
-  check.eq(
-    calcula_desempenho_lista("Sao-Paulo", [
-      Resultado("Sao-Paulo", 1, "Atletico-MG", 2),
-      Resultado("Flamengo", 2, "Palmeiras", 1),
-      Resultado("Palmeiras", 0, "Sao-Paulo", 0),
-      Resultado("Atletico-MG", 1, "Flamengo", 2),
-    ]),
-    [
-      Desempenho("Sao-Paulo", 0, 0, -1),
-      Desempenho("Sao-Paulo", 0, 0, 0),
-      Desempenho("Sao-Paulo", 1, 0, 0),
-      Desempenho("Sao-Paulo", 0, 0, 0),
-      Desempenho("Sao-Paulo", 0, 0, 0),
-    ],
-  )
-}
-
-/// Calcula o desempenho total de um *time* baseado em uma lista de *desempenhos*.
+/// Calcula o desempenho total de um *time* a partir de uma lista com todos seus *desempenhos*.
 pub fn calcula_desempenho_total(
   time: String,
   desempenhos: List(Desempenho),
@@ -430,6 +460,14 @@ pub fn calcula_desempenho_total_examples() {
     Desempenho("Palmeiras", 4, 1, 3),
   )
   check.eq(
+    calcula_desempenho_total("Palmeiras", [
+      Desempenho("Palmeiras", 3, 1, 3),
+      Desempenho("Palmeiras", 1, 0, 0),
+      Desempenho("Palmeiras", 0, 0, -4),
+    ]),
+    Desempenho("Palmeiras", 4, 1, -1),
+  )
+  check.eq(
     calcula_desempenho_total("Sao-Paulo", [
       Desempenho("Sao-Paulo", 0, 0, -1),
       Desempenho("Sao-Paulo", 0, 0, 0),
@@ -440,8 +478,8 @@ pub fn calcula_desempenho_total_examples() {
   )
 }
 
-/// Recebe uma lista de *times* e uma lista de *resultados* e retorna uma lista com os *desempenhos*
-/// de todos os times baseado nos resultados de seus jogos.
+/// Produz uma lista com os desempenhos de todos os times a partir de uma lista com os
+/// nomes dos *times* e de uma lista com os *resultados* desses times.
 pub fn lista_desempenhos(
   times: List(String),
   resultados: List(Resultado),
@@ -486,9 +524,7 @@ pub fn lista_desempenhos_examples() {
   )
 }
 
-/// Ordena os times baseado em seus desempenhos.
-/// A ordenação é feita pela quantidade de pontos, e em caso de empate, pelo número de vitórias,
-/// depois pelo saldo de gols e por fim pela ordem alfabética.
+/// Ordena os times baseado em seus *desempenhos*, do melhor para o pior.
 pub fn ordena_times(
   desempenhos: List(Desempenho),
 ) -> Result(List(Desempenho), Erros) {
@@ -556,14 +592,14 @@ pub fn ordena_times_examples() {
   )
   check.eq(
     ordena_times([
-      Desempenho("Sao-Paulo", 6, 2, 2),
+      Desempenho("Sao-Paulo", 9, 2, 2),
       Desempenho("Atletico-MG", 3, 1, 0),
-      Desempenho("Flamengo", 6, 3, 2),
+      Desempenho("Flamengo", 9, 3, 2),
       Desempenho("Palmeiras", 1, 0, -1),
     ]),
     Ok([
-      Desempenho("Flamengo", 6, 3, 2),
-      Desempenho("Sao-Paulo", 6, 2, 2),
+      Desempenho("Flamengo", 9, 3, 2),
+      Desempenho("Sao-Paulo", 9, 2, 2),
       Desempenho("Atletico-MG", 3, 1, 0),
       Desempenho("Palmeiras", 1, 0, -1),
     ]),
@@ -598,7 +634,7 @@ pub fn ordena_times_examples() {
   )
 }
 
-/// Compara dois *desempenhos* e retorna o melhor desempenho.
+/// Encontra o melhor desempenho entre o *desempenho1* e o *desempenho2*.
 pub fn compara_desempenhos(
   desempenho1: Desempenho,
   desempenho2: Desempenho,
@@ -717,7 +753,6 @@ pub fn encontra_melhor_desempenho_examples() {
 }
 
 /// Remove um *desempenho* de uma lista de *desempenhos*.
-/// Devolve erro caso a lista de *desempenhos* seja vazia.
 pub fn remove_desempenho(
   desempenho: Desempenho,
   desempenhos: List(Desempenho),
@@ -776,7 +811,8 @@ pub fn remove_desempenho_examples() {
   )
 }
 
-/// Transforma uma lista de *desempenhos* em uma lista de strings no formato "time pontos vitórias saldo de gols".
+/// Converte uma lista de *desempenhos* do tipo Desempenho
+/// em uma lista no formato "time pontos vitórias saldo_de_gols".
 pub fn desempenhos_para_strings(desempenhos: List(Desempenho)) -> List(String) {
   case desempenhos {
     [] -> []
@@ -828,12 +864,7 @@ pub fn desempenhos_para_strings_examples() {
   )
 }
 
-/// Recebe os *resultados* dos jogos e retorna a *classificação* dos times.
-/// Uma vitória vale 3 pontos, um empate vale 1 ponto e uma derrota vale 0 pontos.
-/// A classificação é dada pela quantidade de pontos, e em caso de empate, pelo número de vitórias,
-/// depois pelo saldo de gols e por fim pela ordem alfabética.
-/// Os resultados são strings no formato "anfitrião gols visitante gols".
-/// A classificação é uma lista de strings no formato "time pontos vitórias saldo de gols".
+/// Monta a classificação dos times a partir dos *resultados* dos mesmos.
 pub fn monta_classificacao(
   resultados: List(String),
 ) -> Result(List(String), Erros) {
