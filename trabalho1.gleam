@@ -6,13 +6,13 @@ import gleam/string
 import sgleam/check
 
 // Desenvolver um sistema para gerar a classificação dos times participantes
-// de um campeonato de futebol, com base nos resultados de suas partidas.
+// de um campeonato de futebol com base nos resultados de suas partidas.
 // O sistema de pontuação dos jogos é dado por: uma vitória vale 3 pontos,
 // um empate vale 1 ponto e uma derrota vale 0 pontos.
 // Os critérios para desempate entre os times são: quantidade de pontos, número de vitórias,
 // saldo de gols e ordem alfabética consecutivamente.
 
-// A classificação dos times deve ser ter o formato de um tabela, onde estarão 
+// A classificação dos times deve ser ter o formato de uma tabela, onde estarão 
 // dispostos todos os times que participaram de um jogo do campeonato de maneira ordenada.
 // O time com melhor desempenho deve estar no topo da tabela, e os times subsequentes devem
 // ser colocados em suas respectivas posições na tabela, seguindo os critérios de desempate.
@@ -52,8 +52,8 @@ pub type Erros {
   MesmoTime
 }
 
-/// Converte uma lista de *resultados* em uma lista do tipo Resultado se ela for válida,
-/// caso não seja válida, produz um erro.
+/// Converte uma lista de *resultados* em uma lista do tipo Resultado se ela for válida.
+/// Caso não seja válida, produz um erro.
 pub fn converte_resultados(
   resultados: List(String),
 ) -> Result(List(Resultado), Erros) {
@@ -137,9 +137,9 @@ pub fn converte_resultados_examples() {
   )
 }
 
-/// Converte um *resultado* no formato "anfitrião gols visitante gols" 
-/// para o tipo Resultado se a entrada for válida,
-/// caso não seja válida, produz um erro.
+/// Converte um *resultado* no formato "anfitrião gols visitante gols"
+/// para o tipo Resultado se a entrada for válida.
+/// Caso não seja válida, produz um erro.
 pub fn converte_resultado(resultado: String) -> Result(Resultado, Erros) {
   case string.split(resultado, " ") {
     [anfitriao, gols1, visitante, gols2] ->
@@ -250,15 +250,12 @@ pub fn lista_times_examples() {
   )
 }
 
-/// Verifica se um *time* está em uma *lista* de times.
+/// Devolve True se um *time* está em uma *lista* de times. Devolve False caso contrário.
 pub fn verifica_lista_times(time: String, lista: List(String)) -> Bool {
   case lista {
     [] -> False
     [primeiro, ..resto] ->
-      case primeiro == time {
-        True -> True
-        False -> verifica_lista_times(time, resto)
-      }
+      primeiro == time || verifica_lista_times(time, resto)
   }
 }
 
@@ -278,12 +275,9 @@ pub fn verifica_lista_times_examples() {
   )
 }
 
-/// Verifica se um *time* está em um *resultado*.
+/// Devolve True se um *time* está em um *resultado*. Devolve False caso contrário.
 pub fn verifica_time(time: String, resultado: Resultado) -> Bool {
-  case resultado {
-    Resultado(anfitriao, _, visitante, _) ->
-      anfitriao == time || visitante == time
-  }
+  resultado.anfitriao == time || resultado.visitante == time
 }
 
 pub fn verifica_time_examples() {
@@ -702,7 +696,7 @@ pub fn compara_desempenhos_examples() {
   )
 }
 
-/// Encontra o melhor desempenho de uma lista de *desempenhos*.
+/// Encontra e devolve o melhor desempenho de uma lista de *desempenhos*.
 pub fn encontra_melhor_desempenho(
   desempenhos: List(Desempenho),
 ) -> Result(Desempenho, Erros) {
@@ -755,18 +749,17 @@ pub fn encontra_melhor_desempenho_examples() {
 /// Remove um *desempenho* de uma lista de *desempenhos*.
 pub fn remove_desempenho(
   desempenho: Desempenho,
-  desempenhos: List(Desempenho),
+  desempenhos: List(Desempenho)
 ) -> Result(List(Desempenho), Erros) {
   case desempenhos {
     [] -> Error(QuantidadeCamposInvalida)
     [primeiro, ..resto] ->
       case primeiro == desempenho {
         True -> Ok(resto)
-        False ->
-          case remove_desempenho(desempenho, resto) {
-            Ok(resto_sem_elemento) -> Ok([primeiro, ..resto_sem_elemento])
-            Error(erro) -> Error(erro)
-          }
+        False -> case remove_desempenho(desempenho, resto) {
+          Ok(resto) -> Ok([primeiro, ..resto])
+          Error(erro) -> Error(erro)
+        }
       }
   }
 }
@@ -864,7 +857,7 @@ pub fn desempenhos_para_strings_examples() {
   )
 }
 
-/// Monta a classificação dos times a partir dos *resultados* dos mesmos.
+/// Monta a classificação dos times a partir dos *resultados* de seus jogos.
 pub fn monta_classificacao(
   resultados: List(String),
 ) -> Result(List(String), Erros) {
