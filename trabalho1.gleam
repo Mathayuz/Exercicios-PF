@@ -254,8 +254,7 @@ pub fn lista_times_examples() {
 pub fn verifica_lista_times(time: String, lista: List(String)) -> Bool {
   case lista {
     [] -> False
-    [primeiro, ..resto] ->
-      primeiro == time || verifica_lista_times(time, resto)
+    [primeiro, ..resto] -> primeiro == time || verifica_lista_times(time, resto)
   }
 }
 
@@ -519,56 +518,37 @@ pub fn lista_desempenhos_examples() {
 }
 
 /// Ordena os times baseado em seus *desempenhos*, do melhor para o pior.
-pub fn ordena_times(
-  desempenhos: List(Desempenho),
-) -> Result(List(Desempenho), Erros) {
+pub fn ordena_times(desempenhos: List(Desempenho)) -> List(Desempenho) {
   case desempenhos {
-    [] -> Ok([])
-    [primeiro] -> Ok([primeiro])
-    [primeiro, ..resto] ->
-      case encontra_melhor_desempenho(resto) {
-        Ok(melhor_desempenho) ->
-          case primeiro == compara_desempenhos(primeiro, melhor_desempenho) {
-            True ->
-              case ordena_times(resto) {
-                Ok(resto_ordenado) -> Ok([primeiro, ..resto_ordenado])
-                Error(erro) -> Error(erro)
-              }
-            False ->
-              case remove_desempenho(melhor_desempenho, desempenhos) {
-                Ok(desempenhos_sem_melhor) ->
-                  case ordena_times(desempenhos_sem_melhor) {
-                    Ok(resto_ordenado) ->
-                      Ok([melhor_desempenho, ..resto_ordenado])
-                    Error(erro) -> Error(erro)
-                  }
-                Error(erro) -> Error(erro)
-              }
-          }
-        Error(erro) -> Error(erro)
-      }
+    [] -> []
+    [primeiro, ..resto] -> [
+      encontra_melhor_desempenho(primeiro, resto),
+      ..ordena_times(remove_desempenho(
+        encontra_melhor_desempenho(primeiro, resto),
+        desempenhos,
+      ))
+    ]
   }
 }
 
 pub fn ordena_times_examples() {
-  check.eq(ordena_times([]), Ok([]))
-  check.eq(
-    ordena_times([Desempenho("Palmeiras", 3, 1, 3)]),
-    Ok([Desempenho("Palmeiras", 3, 1, 3)]),
-  )
+  check.eq(ordena_times([]), [])
+  check.eq(ordena_times([Desempenho("Palmeiras", 3, 1, 3)]), [
+    Desempenho("Palmeiras", 3, 1, 3),
+  ])
   check.eq(
     ordena_times([
       Desempenho("Palmeiras", 3, 1, 3),
       Desempenho("Corinthians", 0, 0, -3),
     ]),
-    Ok([Desempenho("Palmeiras", 3, 1, 3), Desempenho("Corinthians", 0, 0, -3)]),
+    [Desempenho("Palmeiras", 3, 1, 3), Desempenho("Corinthians", 0, 0, -3)],
   )
   check.eq(
     ordena_times([
       Desempenho("Corinthians", 0, 0, -3),
       Desempenho("Palmeiras", 4, 1, 3),
     ]),
-    Ok([Desempenho("Palmeiras", 4, 1, 3), Desempenho("Corinthians", 0, 0, -3)]),
+    [Desempenho("Palmeiras", 4, 1, 3), Desempenho("Corinthians", 0, 0, -3)],
   )
   check.eq(
     ordena_times([
@@ -577,12 +557,12 @@ pub fn ordena_times_examples() {
       Desempenho("Flamengo", 6, 2, 2),
       Desempenho("Palmeiras", 1, 0, -1),
     ]),
-    Ok([
+    [
       Desempenho("Flamengo", 6, 2, 2),
       Desempenho("Atletico-MG", 3, 1, 0),
       Desempenho("Palmeiras", 1, 0, -1),
       Desempenho("Sao-Paulo", 1, 0, -1),
-    ]),
+    ],
   )
   check.eq(
     ordena_times([
@@ -591,12 +571,12 @@ pub fn ordena_times_examples() {
       Desempenho("Flamengo", 9, 3, 2),
       Desempenho("Palmeiras", 1, 0, -1),
     ]),
-    Ok([
+    [
       Desempenho("Flamengo", 9, 3, 2),
       Desempenho("Sao-Paulo", 9, 2, 2),
       Desempenho("Atletico-MG", 3, 1, 0),
       Desempenho("Palmeiras", 1, 0, -1),
-    ]),
+    ],
   )
   check.eq(
     ordena_times([
@@ -605,12 +585,12 @@ pub fn ordena_times_examples() {
       Desempenho("Flamengo", 6, 3, 3),
       Desempenho("Palmeiras", 1, 0, -1),
     ]),
-    Ok([
+    [
       Desempenho("Flamengo", 6, 3, 3),
       Desempenho("Sao-Paulo", 6, 3, 2),
       Desempenho("Atletico-MG", 3, 1, 0),
       Desempenho("Palmeiras", 1, 0, -1),
-    ]),
+    ],
   )
   check.eq(
     ordena_times([
@@ -619,12 +599,12 @@ pub fn ordena_times_examples() {
       Desempenho("Flamengo", 6, 2, 2),
       Desempenho("Palmeiras", 1, 0, -1),
     ]),
-    Ok([
+    [
       Desempenho("Flamengo", 6, 2, 2),
       Desempenho("Sao-Paulo", 6, 2, 2),
       Desempenho("Atletico-MG", 3, 1, 0),
       Desempenho("Palmeiras", 1, 0, -1),
-    ]),
+    ],
   )
 }
 
@@ -633,35 +613,21 @@ pub fn compara_desempenhos(
   desempenho1: Desempenho,
   desempenho2: Desempenho,
 ) -> Desempenho {
-  case desempenho1.pontos > desempenho2.pontos {
-    True -> desempenho1
-    False ->
-      case desempenho1.pontos < desempenho2.pontos {
-        True -> desempenho2
-        False ->
-          case desempenho1.vitorias > desempenho2.vitorias {
-            True -> desempenho1
-            False ->
-              case desempenho1.vitorias < desempenho2.vitorias {
-                True -> desempenho2
-                False ->
-                  case desempenho1.saldo_gols > desempenho2.saldo_gols {
-                    True -> desempenho1
-                    False ->
-                      case desempenho1.saldo_gols < desempenho2.saldo_gols {
-                        True -> desempenho2
-                        False ->
-                          case
-                            string.compare(desempenho1.time, desempenho2.time)
-                          {
-                            order.Lt -> desempenho1
-                            _ -> desempenho2
-                          }
-                      }
-                  }
-              }
-          }
+  case
+    desempenho1.pontos > desempenho2.pontos
+    || desempenho1.pontos == desempenho2.pontos
+    && {
+      desempenho1.vitorias > desempenho2.vitorias
+      || desempenho1.vitorias == desempenho2.vitorias
+      && {
+        desempenho1.saldo_gols > desempenho2.saldo_gols
+        || desempenho1.saldo_gols == desempenho2.saldo_gols
+        && string.compare(desempenho1.time, desempenho2.time) == order.Lt
       }
+    }
+  {
+    True -> desempenho1
+    False -> desempenho2
   }
 }
 
@@ -697,97 +663,84 @@ pub fn compara_desempenhos_examples() {
 }
 
 /// Encontra e devolve o melhor desempenho de uma lista de *desempenhos*.
+/// Caso a lista seja vazia, devolve o *primeiro* desempenho.
 pub fn encontra_melhor_desempenho(
-  desempenhos: List(Desempenho),
-) -> Result(Desempenho, Erros) {
-  case desempenhos {
-    [] -> Error(QuantidadeCamposInvalida)
-    [primeiro] -> Ok(primeiro)
-    [primeiro, ..resto] ->
-      case encontra_melhor_desempenho(resto) {
-        Ok(melhor_resto) ->
-          case compara_desempenhos(primeiro, melhor_resto) {
-            Desempenho(time, pontos, vitorias, saldo_gols) ->
-              Ok(Desempenho(time, pontos, vitorias, saldo_gols))
-          }
-        Error(erro) -> Error(erro)
-      }
+  primeiro: Desempenho,
+  resto: List(Desempenho),
+) -> Desempenho {
+  case resto {
+    [] -> primeiro
+    [proximo, ..outros] ->
+      compara_desempenhos(primeiro, encontra_melhor_desempenho(proximo, outros))
   }
 }
 
 pub fn encontra_melhor_desempenho_examples() {
-  check.eq(encontra_melhor_desempenho([]), Error(QuantidadeCamposInvalida))
   check.eq(
-    encontra_melhor_desempenho([Desempenho("Palmeiras", 3, 1, 3)]),
-    Ok(Desempenho("Palmeiras", 3, 1, 3)),
+    encontra_melhor_desempenho(Desempenho("Palmeiras", 3, 1, 3), []),
+    Desempenho("Palmeiras", 3, 1, 3),
   )
+
   check.eq(
-    encontra_melhor_desempenho([
-      Desempenho("Palmeiras", 3, 1, 3),
+    encontra_melhor_desempenho(Desempenho("Palmeiras", 3, 1, 3), [
       Desempenho("Corinthians", 0, 0, -3),
     ]),
-    Ok(Desempenho("Palmeiras", 3, 1, 3)),
+    Desempenho("Palmeiras", 3, 1, 3),
   )
+
   check.eq(
-    encontra_melhor_desempenho([
-      Desempenho("Corinthians", 1, 0, -3),
+    encontra_melhor_desempenho(Desempenho("Corinthians", 1, 0, -3), [
       Desempenho("Palmeiras", 4, 1, 3),
     ]),
-    Ok(Desempenho("Palmeiras", 4, 1, 3)),
+    Desempenho("Palmeiras", 4, 1, 3),
   )
+
   check.eq(
-    encontra_melhor_desempenho([
-      Desempenho("Sao-Paulo", 1, 0, -1),
+    encontra_melhor_desempenho(Desempenho("Sao-Paulo", 1, 0, -1), [
       Desempenho("Atletico-MG", 3, 1, 0),
       Desempenho("Flamengo", 6, 2, 2),
       Desempenho("Palmeiras", 1, 0, -1),
     ]),
-    Ok(Desempenho("Flamengo", 6, 2, 2)),
+    Desempenho("Flamengo", 6, 2, 2),
   )
 }
 
 /// Remove um *desempenho* de uma lista de *desempenhos*.
 pub fn remove_desempenho(
   desempenho: Desempenho,
-  desempenhos: List(Desempenho)
-) -> Result(List(Desempenho), Erros) {
+  desempenhos: List(Desempenho),
+) -> List(Desempenho) {
   case desempenhos {
-    [] -> Error(QuantidadeCamposInvalida)
+    [] -> []
     [primeiro, ..resto] ->
       case primeiro == desempenho {
-        True -> Ok(resto)
-        False -> case remove_desempenho(desempenho, resto) {
-          Ok(resto) -> Ok([primeiro, ..resto])
-          Error(erro) -> Error(erro)
-        }
+        True -> resto
+        False -> [primeiro, ..remove_desempenho(desempenho, resto)]
       }
   }
 }
 
 pub fn remove_desempenho_examples() {
-  check.eq(
-    remove_desempenho(Desempenho("Palmeiras", 3, 1, 3), []),
-    Error(QuantidadeCamposInvalida),
-  )
+  check.eq(remove_desempenho(Desempenho("Palmeiras", 3, 1, 3), []), [])
   check.eq(
     remove_desempenho(Desempenho("Palmeiras", 3, 1, 3), [
       Desempenho("Palmeiras", 3, 1, 3),
     ]),
-    Ok([]),
+    [],
   )
   check.eq(
     remove_desempenho(Desempenho("Palmeiras", 3, 1, 3), [
       Desempenho("Palmeiras", 3, 1, 3),
       Desempenho("Corinthians", 0, 0, -3),
     ]),
-    Ok([Desempenho("Corinthians", 0, 0, -3)]),
+    [Desempenho("Corinthians", 0, 0, -3)],
   )
   check.eq(
     remove_desempenho(Desempenho("Corinthians", 0, 0, -3), [
       Desempenho("Corinthians", 0, 0, -3),
       Desempenho("Palmeiras", 4, 1, 3),
     ]),
-    Ok([Desempenho("Palmeiras", 4, 1, 3)]),
+    [Desempenho("Palmeiras", 4, 1, 3)],
   )
   check.eq(
     remove_desempenho(Desempenho("Sao-Paulo", 1, 0, -1), [
@@ -796,11 +749,11 @@ pub fn remove_desempenho_examples() {
       Desempenho("Flamengo", 6, 2, 2),
       Desempenho("Palmeiras", 1, 0, -1),
     ]),
-    Ok([
+    [
       Desempenho("Atletico-MG", 3, 1, 0),
       Desempenho("Flamengo", 6, 2, 2),
       Desempenho("Palmeiras", 1, 0, -1),
-    ]),
+    ],
   )
 }
 
@@ -864,11 +817,7 @@ pub fn monta_classificacao(
   case converte_resultados(resultados) {
     Ok(resultados) ->
       case lista_desempenhos(lista_times(resultados), resultados) {
-        desempenhos ->
-          case ordena_times(desempenhos) {
-            Ok(desempenhos) -> Ok(desempenhos_para_strings(desempenhos))
-            Error(erro) -> Error(erro)
-          }
+        desempenhos -> Ok(desempenhos_para_strings(ordena_times(desempenhos)))
       }
     Error(erro) -> Error(erro)
   }
