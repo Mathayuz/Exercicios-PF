@@ -239,3 +239,54 @@ pub fn cabe_na_outra_examples() {
   check.eq(cabe_na_outra(Circulo(2.0), Retangulo(3.0, 4.0)), False)
   check.eq(cabe_na_outra(Circulo(2.0), Retangulo(2.0, 3.0)), False)
 }
+
+/// Exercício 22
+
+/// Uma posição do jogador baseada na linha e na coluna que ele está.
+pub type Posicao {
+  Posicao(linha: Int, coluna: Int)
+}
+
+/// Um estado do jogador no jogo
+pub type Estado {
+  Estado(pos: Posicao, dir: Direcao)
+}
+
+/// Um comando que o jogador pode receber
+pub type Comando {
+  VirarEsquerda
+  VirarDireita
+  Avancar(v: Int)
+}
+
+pub fn novo_estado(estado: Estado, comando: Comando) -> Result(Estado, Nil) {
+  case comando {
+    VirarEsquerda -> Ok(Estado(estado.pos, direcao_90_graus_antihorario(estado.dir)))
+    VirarDireita -> Ok(Estado(estado.pos, direcao_90_graus_horario(estado.dir)))
+    Avancar(v) -> case estado.pos {
+      Posicao(linha, coluna) -> case estado.dir {
+        Norte -> case coluna + v > 10 {
+          True -> Error(Nil)
+          False -> Ok(Estado(Posicao(linha + v, coluna), estado.dir))
+        }
+        Sul -> case coluna - v < 1 {
+          True -> Error(Nil)
+          False -> Ok(Estado(Posicao(linha - v, coluna), estado.dir))
+        }
+        Leste -> case linha + v > 10 {
+          True -> Error(Nil)
+          False -> Ok(Estado(Posicao(linha, coluna + v), estado.dir))
+        }
+        Oeste -> case linha - v < 1 {
+          True -> Error(Nil)
+          False -> Ok(Estado(Posicao(linha, coluna - v), estado.dir))
+        }
+      }
+    }
+  }
+}
+
+pub fn novo_estado_examples() {
+  check.eq(novo_estado(Estado(Posicao(1, 5), Norte), VirarDireita), Ok(Estado(Posicao(1, 5), Leste)))
+  check.eq(novo_estado(Estado(Posicao(7, 5), Oeste), Avancar(2)), Ok(Estado(Posicao(7, 3), Oeste)))
+}
