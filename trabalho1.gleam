@@ -143,28 +143,14 @@ pub fn converte_resultados_examples() {
 pub fn converte_resultado(resultado: String) -> Result(Resultado, Erros) {
   case string.split(resultado, " ") {
     [anfitriao, gols1, visitante, gols2] ->
-      case int.parse(gols1), int.parse(gols2) {
-        Ok(gols1), Ok(gols2) ->
-          case gols1 < 0 && gols2 < 0 {
-            True -> Error(NumeroInvalidoAnfitriaoVisitante)
-            False ->
-              case gols1 < 0 {
-                True -> Error(NumeroInvalidoAnfitriao)
-                False ->
-                  case gols2 < 0 {
-                    True -> Error(NumeroInvalidoVisitante)
-                    False ->
-                      case anfitriao == visitante {
-                        True -> Error(MesmoTime)
-                        False ->
-                          Ok(Resultado(anfitriao, gols1, visitante, gols2))
-                      }
-                  }
-              }
+      case valida_gols(gols1, gols2) {
+        Ok([gols1, gols2]) ->
+          case anfitriao == visitante {
+            True -> Error(MesmoTime)
+            False -> Ok(Resultado(anfitriao, gols1, visitante, gols2))
           }
-        Error(Nil), Ok(_) -> Error(NaoEhNumeroAnfitriao)
-        Ok(_), Error(Nil) -> Error(NaoEhNumeroVisitante)
-        Error(Nil), Error(Nil) -> Error(NaoEhNumeroAnfitriaoVisitante)
+        Ok(_) -> Error(QuantidadeCamposInvalida)
+        Error(erro) -> Error(erro)
       }
     _ -> Error(QuantidadeCamposInvalida)
   }
@@ -208,6 +194,32 @@ pub fn converte_resultado_examples() {
     Error(NumeroInvalidoAnfitriaoVisitante),
   )
   check.eq(converte_resultado("Palmeiras 3 Palmeiras 0"), Error(MesmoTime))
+}
+
+/// Função auxiliar para validar os *gols1* de um time e os *gols2* de outro time.
+pub fn valida_gols(gols1: String, gols2: String) -> Result(List(Int), Erros) {
+  case int.parse(gols1), int.parse(gols2) {
+    Ok(gols1), Ok(gols2) ->
+      case gols1 > 0 && gols2 > 0 {
+        True -> Ok([gols1, gols2])
+        False ->
+          case gols1 < 0 && gols2 < 0 {
+            True -> Error(NumeroInvalidoAnfitriaoVisitante)
+            False ->
+              case gols1 < 0 && gols2 >= 0 {
+                True -> Error(NumeroInvalidoAnfitriao)
+                False ->
+                  case gols2 < 0 && gols1 >= 0 {
+                    True -> Error(NumeroInvalidoVisitante)
+                    False -> Ok([gols1, gols2])
+                  }
+              }
+          }
+      }
+    Error(Nil), Ok(_) -> Error(NaoEhNumeroAnfitriao)
+    Ok(_), Error(Nil) -> Error(NaoEhNumeroVisitante)
+    Error(Nil), Error(Nil) -> Error(NaoEhNumeroAnfitriaoVisitante)
+  }
 }
 
 /// Produz uma lista com os nomes de todos os times que estão em uma *lista* de Resultado.
@@ -351,30 +363,19 @@ pub fn calcula_desempenho_lista_examples() {
 pub fn calcula_desempenho(time: String, resultado: Resultado) -> Desempenho {
   case verifica_time(time, resultado) {
     True ->
-      case resultado {
-        Resultado(anfitriao, gols_anfitriao, _visitante, gols_visitante) ->
-          case time == anfitriao {
-            True ->
-              case gols_anfitriao > gols_visitante {
-                True -> Desempenho(time, 3, 1, gols_anfitriao - gols_visitante)
-                False ->
-                  case gols_anfitriao < gols_visitante {
-                    True ->
-                      Desempenho(time, 0, 0, gols_anfitriao - gols_visitante)
-                    False -> Desempenho(time, 1, 0, 0)
-                  }
-              }
-            False ->
-              case gols_visitante > gols_anfitriao {
-                True -> Desempenho(time, 3, 1, gols_visitante - gols_anfitriao)
-                False ->
-                  case gols_visitante < gols_anfitriao {
-                    True ->
-                      Desempenho(time, 0, 0, gols_visitante - gols_anfitriao)
-                    False -> Desempenho(time, 1, 0, 0)
-                  }
-              }
-          }
+      case time == resultado.anfitriao {
+        True ->
+          calcula_desempenho_aux(
+            time,
+            resultado.gols_anfitriao,
+            resultado.gols_visitante,
+          )
+        False ->
+          calcula_desempenho_aux(
+            time,
+            resultado.gols_visitante,
+            resultado.gols_anfitriao,
+          )
       }
     False -> Desempenho(time, 0, 0, 0)
   }
@@ -414,6 +415,23 @@ pub fn calcula_desempenho_examples() {
     ),
     Desempenho("Corinthians", 1, 0, 0),
   )
+}
+
+// Calcula o desempenho de um *time* com base nos *gols1* marcados por ele e nos
+// *gols2* marcados pelo seu adversário
+pub fn calcula_desempenho_aux(
+  time: String,
+  gols1: Int,
+  gols2: Int,
+) -> Desempenho {
+  case gols1 > gols2 {
+    True -> Desempenho(time, 3, 1, gols1 - gols2)
+    False ->
+      case gols1 < gols2 {
+        True -> Desempenho(time, 0, 0, gols1 - gols2)
+        False -> Desempenho(time, 1, 0, 0)
+      }
+  }
 }
 
 /// Calcula o desempenho total de um *time* a partir de uma lista com todos seus *desempenhos*.
@@ -826,35 +844,50 @@ pub fn monta_classificacao(
 pub fn monta_classificacao_examples() {
   check.eq(monta_classificacao([]), Ok([]))
   check.eq(
-    monta_classificacao(["Palmeiras 3 Corinthians 0 0"]),
+    monta_classificacao([
+      "Palmeiras 1 Sao-Paulo 0", "Palmeiras 3 Corinthians 0 0",
+    ]),
     Error(QuantidadeCamposInvalida),
   )
   check.eq(
-    monta_classificacao(["Palmeiras 3 Corinthians"]),
+    monta_classificacao(["Santos 2 Críciuma 4", "Palmeiras 3 Corinthians"]),
     Error(QuantidadeCamposInvalida),
   )
   check.eq(
-    monta_classificacao(["Palmeiras a Corinthians 0"]),
+    monta_classificacao([
+      "Maringá-FC 2 Flamengo 0", "Palmeiras a Corinthians 0",
+    ]),
     Error(NaoEhNumeroAnfitriao),
   )
   check.eq(
-    monta_classificacao(["Palmeiras 3 Corinthians a"]),
+    monta_classificacao([
+      "Maringá-FC 2 Flamengo 0", "Palmeiras 3 Corinthians a",
+    ]),
     Error(NaoEhNumeroVisitante),
   )
   check.eq(
-    monta_classificacao(["Palmeiras a Corinthians b"]),
+    monta_classificacao([
+      "Maringá-FC 2 Flamengo 0", "Palmeiras a Corinthians b",
+    ]),
     Error(NaoEhNumeroAnfitriaoVisitante),
   )
   check.eq(
-    monta_classificacao(["Palmeiras -1 Corinthians 0"]),
+    monta_classificacao([
+      "Maringá-FC 2 Flamengo 0", "Palmeiras -1 Corinthians 0",
+    ]),
     Error(NumeroInvalidoAnfitriao),
   )
   check.eq(
-    monta_classificacao(["Palmeiras 3 Corinthians -1"]),
+    monta_classificacao([
+      "Maringá-FC 2 Flamengo 0", "Palmeiras 3 Corinthians -1",
+    ]),
     Error(NumeroInvalidoVisitante),
   )
   check.eq(
-    monta_classificacao(["Palmeiras -3 Corinthians -1"]),
+    monta_classificacao([
+      "Maringá-FC 2 Flamengo 0", "Palmeiras -3 Corinthians -1",
+      "Palmeiras 3 Corinthians 0 0",
+    ]),
     Error(NumeroInvalidoAnfitriaoVisitante),
   )
   check.eq(monta_classificacao(["Palmeiras 3 Palmeiras 0"]), Error(MesmoTime))
