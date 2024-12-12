@@ -1,5 +1,4 @@
 import gleam/string
-import gleam/int
 import gleam/float
 import sgleam/check
 
@@ -290,3 +289,48 @@ pub fn novo_estado_examples() {
   check.eq(novo_estado(Estado(Posicao(1, 5), Norte), VirarDireita), Ok(Estado(Posicao(1, 5), Leste)))
   check.eq(novo_estado(Estado(Posicao(7, 5), Oeste), Avancar(2)), Ok(Estado(Posicao(7, 3), Oeste)))
 }
+
+/// Exercício 23
+
+pub opaque type Meses {
+  Meses(valor: Int)
+}
+
+pub fn meses(v: Int) -> Result(Meses, Nil) {
+  case v < 1 || v > 12 {
+    True -> Error(Nil)
+    False -> Ok(Meses(v))
+  }
+}
+
+pub fn get_valor(m: Meses) -> Int {
+  m.valor
+}
+
+pub type Pagamento {
+  Pix
+  Dinheiro
+  Boleto
+  Parcelado(meses: Meses)
+}
+
+pub fn valor_compra(valor: Float, pagamento: Pagamento) -> Result(Float, Nil) {
+  case pagamento {
+    Pix -> Ok(valor -. valor *. 0.1)
+    Dinheiro -> Ok(valor -. valor *. 0.1)
+    Boleto -> Ok(valor -. valor *. 0.08)
+    Parcelado(meses) -> case get_valor(meses) > 3 {
+      True -> Ok(valor +. valor *. 0.12)
+      False -> Ok(valor)
+    }
+  }
+}
+
+pub fn valor_compra_examples() {
+  check.eq(valor_compra(50.0, Pix), Ok(45.0))
+  check.eq(valor_compra(40.0, Dinheiro), Ok(36.0))
+  check.eq(valor_compra(80.0, Boleto), Ok(73.6))
+  check.eq(valor_compra(80.0, Parcelado(Meses(3))), Ok(80.0))
+  check.eq(valor_compra(80.0, Parcelado(Meses(4))), Ok(89.6))
+}
+

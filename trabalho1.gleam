@@ -918,7 +918,6 @@ pub fn monta_classificacao_examples() {
       "Sao-Paulo 1 0 -1",
     ]),
   )
-
   check.eq(
     monta_classificacao([
       "Sao-Paulo 2 Flamengo 2", "Palmeiras 3 Atletico-MG 1",
