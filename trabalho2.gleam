@@ -215,3 +215,145 @@ pub fn lista_times_examples() {
     ["Sao-Paulo", "Atletico-MG", "Flamengo", "Palmeiras"],
   )
 }
+
+/// Devolve True se um *time* está em um *resultado*. Devolve False caso contrário.
+pub fn verifica_time(time: String, resultado: Resultado) -> Bool {
+  resultado.anfitriao == time || resultado.visitante == time
+}
+
+pub fn verifica_time_examples() {
+  check.eq(
+    verifica_time("Palmeiras", Resultado("Palmeiras", 3, "Corinthians", 0)),
+    True,
+  )
+  check.eq(
+    verifica_time("Corinthians", Resultado("Palmeiras", 3, "Corinthians", 0)),
+    True,
+  )
+  check.eq(
+    verifica_time("Corinthians", Resultado("Sao-Paulo", 3, "Flamengo", 0)),
+    False,
+  )
+}
+
+/// Calcula todos os desempenhos de um *time* baseado nos *resultados* de seus jogos e
+/// produz uma lista com esses desempenhos.
+pub fn calcula_desempenho_lista(
+  time: String,
+  resultados: List(Resultado),
+) -> List(Desempenho) {
+  list.map(resultados, calcula_desempenho(time, resultado))
+}
+
+pub fn calcula_desempenho_lista_examples() {
+  check.eq(calcula_desempenho_lista("Palmeiras", []), [
+    Desempenho("Palmeiras", 0, 0, 0),
+  ])
+  check.eq(
+    calcula_desempenho_lista("Palmeiras", [
+      Resultado("Palmeiras", 3, "Corinthians", 0),
+    ]),
+    [Desempenho("Palmeiras", 3, 1, 3), Desempenho("Palmeiras", 0, 0, 0)],
+  )
+  check.eq(
+    calcula_desempenho_lista("Palmeiras", [
+      Resultado("Palmeiras", 3, "Corinthians", 0),
+      Resultado("Corinthians", 1, "Palmeiras", 1),
+    ]),
+    [
+      Desempenho("Palmeiras", 3, 1, 3),
+      Desempenho("Palmeiras", 1, 0, 0),
+      Desempenho("Palmeiras", 0, 0, 0),
+    ],
+  )
+  check.eq(
+    calcula_desempenho_lista("Sao-Paulo", [
+      Resultado("Sao-Paulo", 1, "Atletico-MG", 2),
+      Resultado("Flamengo", 2, "Palmeiras", 1),
+      Resultado("Palmeiras", 0, "Sao-Paulo", 0),
+      Resultado("Atletico-MG", 1, "Flamengo", 2),
+    ]),
+    [
+      Desempenho("Sao-Paulo", 0, 0, -1),
+      Desempenho("Sao-Paulo", 0, 0, 0),
+      Desempenho("Sao-Paulo", 1, 0, 0),
+      Desempenho("Sao-Paulo", 0, 0, 0),
+      Desempenho("Sao-Paulo", 0, 0, 0),
+    ],
+  )
+}
+
+/// Calcula o desempenho de um *time* baseado em um *resultado*.
+pub fn calcula_desempenho(time: String, resultado: Resultado) -> Desempenho {
+  case verifica_time(time, resultado) {
+    True ->
+      case time == resultado.anfitriao {
+        True ->
+          calcula_desempenho_aux(
+            time,
+            resultado.gols_anfitriao,
+            resultado.gols_visitante,
+          )
+        False ->
+          calcula_desempenho_aux(
+            time,
+            resultado.gols_visitante,
+            resultado.gols_anfitriao,
+          )
+      }
+    False -> Desempenho(time, 0, 0, 0)
+  }
+}
+
+pub fn calcula_desempenho_examples() {
+  check.eq(
+    calcula_desempenho("Palmeiras", Resultado("Palmeiras", 3, "Corinthians", 0)),
+    Desempenho("Palmeiras", 3, 1, 3),
+  )
+  check.eq(
+    calcula_desempenho("Palmeiras", Resultado("Palmeiras", 0, "Corinthians", 3)),
+    Desempenho("Palmeiras", 0, 0, -3),
+  )
+  check.eq(
+    calcula_desempenho("Palmeiras", Resultado("Palmeiras", 1, "Corinthians", 1)),
+    Desempenho("Palmeiras", 1, 0, 0),
+  )
+  check.eq(
+    calcula_desempenho(
+      "Corinthians",
+      Resultado("Palmeiras", 0, "Corinthians", 3),
+    ),
+    Desempenho("Corinthians", 3, 1, 3),
+  )
+  check.eq(
+    calcula_desempenho(
+      "Corinthians",
+      Resultado("Palmeiras", 3, "Corinthians", 0),
+    ),
+    Desempenho("Corinthians", 0, 0, -3),
+  )
+  check.eq(
+    calcula_desempenho(
+      "Corinthians",
+      Resultado("Palmeiras", 1, "Corinthians", 1),
+    ),
+    Desempenho("Corinthians", 1, 0, 0),
+  )
+}
+
+// Calcula o desempenho de um *time* com base nos *gols1* marcados por ele e nos
+// *gols2* marcados pelo seu adversário
+pub fn calcula_desempenho_aux(
+  time: String,
+  gols1: Int,
+  gols2: Int,
+) -> Desempenho {
+  case gols1 > gols2 {
+    True -> Desempenho(time, 3, 1, gols1 - gols2)
+    False ->
+      case gols1 < gols2 {
+        True -> Desempenho(time, 0, 0, gols1 - gols2)
+        False -> Desempenho(time, 1, 0, 0)
+      }
+  }
+}
