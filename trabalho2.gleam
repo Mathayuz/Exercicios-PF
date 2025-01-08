@@ -514,6 +514,29 @@ pub fn ordena_times_examples() {
   )
 }
 
+/// Encontra o melhor desempenho entre o *desempenho1* e o *desempenho2*.
+pub fn compara_desempenhos(
+  desempenho1: Desempenho,
+  desempenho2: Desempenho,
+) -> Desempenho {
+  case
+    desempenho1.pontos > desempenho2.pontos
+    || desempenho1.pontos == desempenho2.pontos
+    && {
+      desempenho1.vitorias > desempenho2.vitorias
+      || desempenho1.vitorias == desempenho2.vitorias
+      && {
+        desempenho1.saldo_gols > desempenho2.saldo_gols
+        || desempenho1.saldo_gols == desempenho2.saldo_gols
+        && string.compare(desempenho1.time, desempenho2.time) == order.Lt
+      }
+    }
+  {
+    True -> desempenho1
+    False -> desempenho2
+  }
+}
+
 /// Converte uma lista de *desempenhos* do tipo Desempenho
 /// em uma lista no formato "time pontos vitórias saldo_de_gols".
 pub fn desempenhos_para_strings(desempenhos: List(Desempenho)) -> List(String) {
@@ -521,14 +544,13 @@ pub fn desempenhos_para_strings(desempenhos: List(Desempenho)) -> List(String) {
 }
 
 /// Monta a classificação dos times a partir dos *resultados* de seus jogos.
-pub fn monta_classificacao(
-  resultados: List(String),
-) -> Result(List(String), Erros) {
-  case converte_resultados(resultados) {
-    Ok(resultados) ->
-      case lista_desempenhos(lista_times(resultados), resultados) {
-        desempenhos -> Ok(desempenhos_para_strings(ordena_times(desempenhos)))
-      }
-    Error(erro) -> Error(erro)
-  }
-}
+// pub fn monta_classificacao(
+//   resultados: List(String),
+// ) -> Result(List(String), Erros) {
+//   use resultados <- result.try(converte_resultados(resultados))
+//   resultados
+//   |> lista_times
+//   |> lista_desempenhos(resultados)
+//   |> ordena_times
+//   |> desempenhos_para_strings
+// }
