@@ -550,6 +550,11 @@ pub fn desempenho_para_string(desempenho: Desempenho) -> String {
       )
 }
 
+pub fn desempenho_para_string_examples() {
+  check.eq(desempenho_para_string(Desempenho("Palmeiras", 3, 1, 3)), 
+    "Palmeiras 3 1 3",
+  )
+}
 
 /// Converte uma lista de *desempenhos* do tipo Desempenho
 /// em uma lista no formato "time pontos vitórias saldo_de_gols".
