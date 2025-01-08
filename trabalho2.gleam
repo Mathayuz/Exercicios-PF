@@ -537,10 +537,57 @@ pub fn compara_desempenhos(
   }
 }
 
+/// Converte um *desempenho* do tipo Desempenho em uma string no formato "time pontos vitórias saldo_de_gols"
+pub fn desempenho_para_string(desempenho: Desempenho) -> String {
+    string.join(
+        [
+          desempenho.time,
+          int.to_string(desempenho.pontos),
+          int.to_string(desempenho.vitorias),
+          int.to_string(desempenho.saldo_gols),
+        ],
+        with: " ",
+      )
+}
+
+
 /// Converte uma lista de *desempenhos* do tipo Desempenho
 /// em uma lista no formato "time pontos vitórias saldo_de_gols".
 pub fn desempenhos_para_strings(desempenhos: List(Desempenho)) -> List(String) {
-  todo
+  list.map(desempenhos, desempenho_para_string)
+}
+
+pub fn desempenhos_para_strings_examples() {
+  check.eq(desempenhos_para_strings([]), [])
+  check.eq(desempenhos_para_strings([Desempenho("Palmeiras", 3, 1, 3)]), [
+    "Palmeiras 3 1 3",
+  ])
+  check.eq(
+    desempenhos_para_strings([
+      Desempenho("Palmeiras", 3, 1, 3),
+      Desempenho("Corinthians", 0, 0, -3),
+    ]),
+    ["Palmeiras 3 1 3", "Corinthians 0 0 -3"],
+  )
+  check.eq(
+    desempenhos_para_strings([
+      Desempenho("Palmeiras", 4, 1, 3),
+      Desempenho("Corinthians", 1, 0, -3),
+    ]),
+    ["Palmeiras 4 1 3", "Corinthians 1 0 -3"],
+  )
+  check.eq(
+    desempenhos_para_strings([
+      Desempenho("Flamengo", 6, 2, 2),
+      Desempenho("Atletico-MG", 3, 1, 0),
+      Desempenho("Palmeiras", 1, 0, -1),
+      Desempenho("Sao-Paulo", 1, 0, -1),
+    ]),
+    [
+      "Flamengo 6 2 2", "Atletico-MG 3 1 0", "Palmeiras 1 0 -1",
+      "Sao-Paulo 1 0 -1",
+    ],
+  )
 }
 
 /// Monta a classificação dos times a partir dos *resultados* de seus jogos.
