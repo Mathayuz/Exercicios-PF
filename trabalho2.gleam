@@ -434,7 +434,7 @@ pub fn lista_desempenhos_examples() {
 
 /// Ordena os times baseado em seus *desempenhos*, do melhor para o pior.
 pub fn ordena_times(desempenhos: List(Desempenho)) -> List(Desempenho) {
-  
+  list.fold(desempenhos, [], insere_ordenado)
 }
 
 pub fn ordena_times_examples() {
@@ -514,12 +514,38 @@ pub fn ordena_times_examples() {
   )
 }
 
-/// Encontra o melhor desempenho entre o *desempenho1* e o *desempenho2*.
+/// Insere um desempenho *n* em uma lista já ordenada *lst*, mantendo a ordenação.
+pub fn insere_ordenado(lst: List(Desempenho), n: Desempenho) -> List(Desempenho) {
+  let lista_maiores = list.fold_until(lst, [], fn(acc, desempenho) {
+    case compara_desempenhos(n, desempenho) {
+      False -> list.Continue(list.append(acc, [desempenho]))
+      True -> list.Stop(acc)
+    }
+  })
+  let lista_ate_n = list.append(lista_maiores, [n])
+  list.append(lista_ate_n, list.drop(lst, list.length(lista_maiores)))
+}
+
+pub fn insere_ordenado_examples() {
+  check.eq(insere_ordenado([], Desempenho("Palmeiras", 3, 1, 3)), [
+    Desempenho("Palmeiras", 3, 1, 3),
+  ])
+  check.eq(
+    insere_ordenado([Desempenho("Palmeiras", 3, 1, 3)], Desempenho("Corinthians", 0, 0, -3)),
+    [Desempenho("Palmeiras", 3, 1, 3), Desempenho("Corinthians", 0, 0, -3)],
+  )
+  check.eq(insere_ordenado([Desempenho("Corinthians", 0, 0, -3)], Desempenho("Palmeiras", 3, 1, 3)),
+    [Desempenho("Palmeiras", 3, 1, 3), Desempenho("Corinthians", 0, 0, -3)],)
+  check.eq(insere_ordenado([Desempenho("Sao-Paulo", 4, 1, 2), Desempenho("Palmeiras", 1, 0, 0)], Desempenho("Corinthians", 3, 1, 1)),
+    [Desempenho("Sao-Paulo", 4, 1, 2), Desempenho("Corinthians", 3, 1, 1), Desempenho("Palmeiras", 1, 0, 0)])
+}
+
+
+/// Devolve True se o *desempenho1* é melhor que o *desempenho2*. Devolve False caso contrário.
 pub fn compara_desempenhos(
   desempenho1: Desempenho,
   desempenho2: Desempenho,
-) -> Desempenho {
-  case
+) -> Bool {
     desempenho1.pontos > desempenho2.pontos
     || desempenho1.pontos == desempenho2.pontos
     && {
@@ -531,23 +557,20 @@ pub fn compara_desempenhos(
         && string.compare(desempenho1.time, desempenho2.time) == order.Lt
       }
     }
-  {
-    True -> desempenho1
-    False -> desempenho2
-  }
 }
+
 
 /// Converte um *desempenho* do tipo Desempenho em uma string no formato "time pontos vitórias saldo_de_gols"
 pub fn desempenho_para_string(desempenho: Desempenho) -> String {
-    string.join(
-        [
-          desempenho.time,
-          int.to_string(desempenho.pontos),
-          int.to_string(desempenho.vitorias),
-          int.to_string(desempenho.saldo_gols),
-        ],
-        with: " ",
-      )
+  string.join(
+      [
+        desempenho.time,
+        int.to_string(desempenho.pontos),
+        int.to_string(desempenho.vitorias),
+        int.to_string(desempenho.saldo_gols),
+      ],
+      with: " ",
+    )
 }
 
 pub fn desempenho_para_string_examples() {
@@ -557,7 +580,7 @@ pub fn desempenho_para_string_examples() {
 }
 
 /// Converte uma lista de *desempenhos* do tipo Desempenho
-/// em uma lista no formato "time pontos vitórias saldo_de_gols".
+/// em uma lista de strings no formato "time pontos vitórias saldo_de_gols".
 pub fn desempenhos_para_strings(desempenhos: List(Desempenho)) -> List(String) {
   list.map(desempenhos, desempenho_para_string)
 }
@@ -576,13 +599,6 @@ pub fn desempenhos_para_strings_examples() {
   )
   check.eq(
     desempenhos_para_strings([
-      Desempenho("Palmeiras", 4, 1, 3),
-      Desempenho("Corinthians", 1, 0, -3),
-    ]),
-    ["Palmeiras 4 1 3", "Corinthians 1 0 -3"],
-  )
-  check.eq(
-    desempenhos_para_strings([
       Desempenho("Flamengo", 6, 2, 2),
       Desempenho("Atletico-MG", 3, 1, 0),
       Desempenho("Palmeiras", 1, 0, -1),
@@ -595,14 +611,193 @@ pub fn desempenhos_para_strings_examples() {
   )
 }
 
-/// Monta a classificação dos times a partir dos *resultados* de seus jogos.
-// pub fn monta_classificacao(
-//   resultados: List(String),
-// ) -> Result(List(String), Erros) {
-//   use resultados <- result.try(converte_resultados(resultados))
-//   resultados
-//   |> lista_times
-//   |> lista_desempenhos(resultados)
-//   |> ordena_times
-//   |> desempenhos_para_strings
-// }
+/// Conserta o formato das strings dos desempenhos para que a saída seja mais amigável.
+pub fn conserta_strings(lst: List(String)) -> List(String) {
+
+  let maior_tamanho = max_time_len(lista_times_strings(lst))
+
+  list.map(lst, fn(str) {
+    case string.split(str, " ") {
+      [time, pontos, vitorias, saldo_gols] -> 
+        string.pad_right(time, maior_tamanho, " ") <> "  " <> pontos <> "  " <> vitorias <> string.pad_left(saldo_gols, 4, " ")
+      _ -> str
+    }
+  })
+}
+
+pub fn conserta_strings_examples() {
+  check.eq(conserta_strings([]), [])
+  check.eq(conserta_strings(["Palmeiras 3 1 3"]), [
+    "Palmeiras  3  1   3",
+  ])
+  check.eq(
+    conserta_strings([
+      "Palmeiras 3 1 3",
+      "Corinthians 0 0 -3"
+    ]),
+    ["Palmeiras    3  1   3", "Corinthians  0  0  -3"],
+  )
+  check.eq(
+    conserta_strings([
+      "Flamengo 6 2 2",
+      "Atletico-MG 3 1 0",
+      "Palmeiras 1 0 -1",
+      "Sao-Paulo 1 0 -1"
+    ]),
+    [
+      "Flamengo     6  2   2", "Atletico-MG  3  1   0", "Palmeiras    1  0  -1",
+      "Sao-Paulo    1  0  -1",
+    ],
+  )
+}
+
+/// Encontra a string de maior tamanho de uma lista de strings.
+pub fn max_time_len(lst: List(String)) -> Int {
+  list.fold(lst, 0, fn(acc, str) {
+    case string.length(str) > acc {
+      True -> string.length(str)
+      False -> acc
+    }
+  })
+}
+
+pub fn max_time_len_examples() {
+  check.eq(max_time_len([]), 0)
+  check.eq(max_time_len(["Palmeiras", "Corinthians"]), 11)
+  check.eq(max_time_len(["Sao-Paulo", "Atletico-MG", "Flamengo", "Palmeiras"]), 11)
+}
+
+/// Cria uma lista com os nomes de todos os times a partir de uma lista de Desempenhos.
+/// Cria uma lista com os nomes de todos os times a partir de uma lista de strings.
+pub fn lista_times_strings(desempenhos: List(String)) -> List(String) {
+  list.map(desempenhos, fn(desempenho) {
+    case string.split(desempenho, " ") {
+      [time, ..] -> time
+      _ -> ""
+    }
+  })
+}
+
+pub fn lista_times_strings_examples() {
+  check.eq(lista_times_strings([]), [])
+  check.eq(lista_times_strings(["Palmeiras 3 1 3"]), ["Palmeiras"])
+  check.eq(
+    lista_times_strings([
+      "Palmeiras 3 1 3", "Corinthians 0 0 -3",
+    ]),
+    ["Palmeiras", "Corinthians"],
+  )
+  check.eq(
+    lista_times_strings([
+      "Flamengo 6 2 2", "Atletico-MG 3 1 0", "Palmeiras 1 0 -1",
+      "Sao-Paulo 1 0 -1",
+    ]),
+    ["Flamengo", "Atletico-MG", "Palmeiras", "Sao-Paulo"],
+  )
+}
+
+
+// Monta a classificação dos times a partir dos *resultados* de seus jogos.
+pub fn monta_classificacao(
+  resultados: List(String),
+) -> Result(List(String), Erros) {
+  use resultados <- result.try(converte_resultados(resultados))
+  resultados
+  |> lista_times
+  |> lista_desempenhos(resultados)
+  |> ordena_times
+  |> desempenhos_para_strings
+  |> conserta_strings
+  |> Ok
+}
+
+pub fn monta_classificacao_examples() {
+  check.eq(monta_classificacao([]), Ok([]))
+  check.eq(
+    monta_classificacao([
+      "Palmeiras 1 Sao-Paulo 0", "Palmeiras 3 Corinthians 0 0",
+    ]),
+    Error(QuantidadeCamposInvalida),
+  )
+  check.eq(
+    monta_classificacao(["Santos 2 Críciuma 4", "Palmeiras 3 Corinthians"]),
+    Error(QuantidadeCamposInvalida),
+  )
+  check.eq(
+    monta_classificacao([
+      "Maringá-FC 2 Flamengo 0", "Palmeiras a Corinthians 0",
+    ]),
+    Error(NaoEhNumeroAnfitriao),
+  )
+  check.eq(
+    monta_classificacao([
+      "Maringá-FC 2 Flamengo 0", "Palmeiras 3 Corinthians a",
+    ]),
+    Error(NaoEhNumeroVisitante),
+  )
+  check.eq(
+    monta_classificacao([
+      "Maringá-FC 2 Flamengo 0", "Palmeiras a Corinthians b",
+    ]),
+    Error(NaoEhNumeroAnfitriaoVisitante),
+  )
+  check.eq(
+    monta_classificacao([
+      "Maringá-FC 2 Flamengo 0", "Palmeiras -1 Corinthians 0",
+    ]),
+    Error(NumeroInvalidoAnfitriao),
+  )
+  check.eq(
+    monta_classificacao([
+      "Maringá-FC 2 Flamengo 0", "Palmeiras 3 Corinthians -1",
+    ]),
+    Error(NumeroInvalidoVisitante),
+  )
+  check.eq(
+    monta_classificacao([
+      "Maringá-FC 2 Flamengo 0", "Palmeiras -3 Corinthians -1",
+      "Palmeiras 3 Corinthians 0 0",
+    ]),
+    Error(NumeroInvalidoAnfitriaoVisitante),
+  )
+  check.eq(monta_classificacao(["Palmeiras 3 Palmeiras 0"]), Error(MesmoTime))
+  check.eq(
+    monta_classificacao([
+      "Palmeiras 3 Corinthians a", "Corinthians 1 Palmeiras 1",
+      "Palmeiras 3 Corinthians -4", "Corinthians 1 Corinthians 1",
+    ]),
+    Error(NaoEhNumeroVisitante),
+  )
+  check.eq(
+    monta_classificacao(["Palmeiras 3 Corinthians 0"]),
+    Ok(["Palmeiras    3  1   3", "Corinthians  0  0  -3"]),
+  )
+  check.eq(
+    monta_classificacao([
+      "Palmeiras 3 Corinthians 0", "Corinthians 1 Palmeiras 1",
+    ]),
+    Ok(["Palmeiras    4  1   3", "Corinthians  1  0  -3"]),
+  )
+  check.eq(
+    monta_classificacao([
+      "Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+      "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2",
+    ]),
+    Ok([
+      "Flamengo     6  2   2", "Atletico-MG  3  1   0", "Palmeiras    1  0  -1",
+      "Sao-Paulo    1  0  -1",
+    ]),
+  )
+  check.eq(
+    monta_classificacao([
+      "Sao-Paulo 2 Flamengo 2", "Palmeiras 3 Atletico-MG 1",
+      "Atletico-MG 0 Sao-Paulo 1", "Flamengo 1 Palmeiras 1",
+      "Sao-Paulo 3 Palmeiras 0", "Flamengo 2 Atletico-MG 2",
+      "Atletico-MG 1 Sao-Paulo 1", "Palmeiras 2 Flamengo 2",
+    ]),
+    Ok([
+      "Sao-Paulo    8  2   4", "Palmeiras    5  1  -1", "Flamengo     4  0   0",
+      "Atletico-MG  2  0  -3",
+    ]),
+  )
+}
