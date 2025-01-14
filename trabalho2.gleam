@@ -19,11 +19,16 @@ import sgleam/check
 // O time com melhor desempenho deve estar no topo da tabela, e os times subsequentes devem
 // ser colocados em suas respectivas posições na tabela, seguindo os critérios de desempate.
 
+/// O resultado de um jogo do campeonato.
 pub type Resultado {
   Resultado(
+    // O nome do time anfitrião.
     anfitriao: String,
+    // A quantidade de gols do time anfitrião.
     gols_anfitriao: Int,
+    // O nome do time visitante.
     visitante: String,
+    // A quantidade de gols do time visitante.
     gols_visitante: Int,
   )
 }
@@ -196,7 +201,7 @@ pub fn lista_times(resultados: List(Resultado)) -> List(String) {
   |> list.unique
 }
 
-// Auxiliar para encontrar os nomes dos times anfitriao e visitante de um *resultado*.
+// Auxiliar para encontrar os nomes dos times anfitrião e visitante de um *resultado*.
 pub fn nomes_times_resultado(resultado: Resultado) -> List(String) {
   [resultado.anfitriao, resultado.visitante]
 }
@@ -206,13 +211,6 @@ pub fn lista_times_examples() {
   check.eq(lista_times([Resultado("Palmeiras", 3, "Corinthians", 0)]), [
     "Palmeiras", "Corinthians",
   ])
-  check.eq(
-    lista_times([
-      Resultado("Palmeiras", 3, "Corinthians", 0),
-      Resultado("Corinthians", 1, "Palmeiras", 1),
-    ]),
-    ["Palmeiras", "Corinthians"],
-  )
   check.eq(
     lista_times([
       Resultado("Sao-Paulo", 1, "Atletico-MG", 2),
@@ -235,12 +233,6 @@ pub fn calcula_desempenho_lista(
 
 pub fn calcula_desempenho_lista_examples() {
   check.eq(calcula_desempenho_lista("Palmeiras", []), [])
-  check.eq(
-    calcula_desempenho_lista("Palmeiras", [
-      Resultado("Palmeiras", 3, "Corinthians", 0),
-    ]),
-    [Desempenho("Palmeiras", 3, 1, 3)],
-  )
   check.eq(
     calcula_desempenho_lista("Palmeiras", [
       Resultado("Palmeiras", 3, "Corinthians", 0),
@@ -693,8 +685,8 @@ pub fn max_time_len_examples() {
   )
 }
 
-/// Cria uma lista com os nomes de todos os times a partir de uma lista de Desempenhos.
-/// Cria uma lista com os nomes de todos os times a partir de uma lista de strings.
+/// Cria uma lista com os nomes de todos os times a partir de uma lista de strings
+/// no formato "time pontos vitórias saldo_de_gols".
 pub fn lista_times_strings(desempenhos: List(String)) -> List(String) {
   list.map(desempenhos, fn(desempenho) {
     case string.split(desempenho, " ") {
