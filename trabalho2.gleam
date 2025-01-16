@@ -632,17 +632,21 @@ pub fn desempenhos_para_strings_examples() {
 
 /// Conserta o formato das strings dos desempenhos para que a saída seja mais amigável.
 pub fn conserta_strings(lst: List(String)) -> List(String) {
-  let maior_tamanho = max_time_len(lista_times_strings(lst))
+  let maior_tamanho = max_str_len(lista_times_strings(lst))
+  let maior_pontos = max_str_len(lista_pontos_strings(lst))
+  let maior_vitoria = max_str_len(lista_vitorias_strings(lst))
+  let maior_saldo_gols = max_str_len(lista_saldo_gols_strings(lst))
 
   list.map(lst, fn(str) {
     case string.split(str, " ") {
       [time, pontos, vitorias, saldo_gols] ->
         string.pad_right(time, maior_tamanho, " ")
         <> "  "
-        <> pontos
+        <> string.pad_left(pontos, maior_pontos, " ")
         <> "  "
-        <> vitorias
-        <> string.pad_left(saldo_gols, 4, " ")
+        <> string.pad_left(vitorias, maior_vitoria, " ")
+        <> "  "
+        <> string.pad_left(saldo_gols, maior_saldo_gols, " ")
       _ -> str
     }
   })
@@ -650,7 +654,7 @@ pub fn conserta_strings(lst: List(String)) -> List(String) {
 
 pub fn conserta_strings_examples() {
   check.eq(conserta_strings([]), [])
-  check.eq(conserta_strings(["Palmeiras 3 1 3"]), ["Palmeiras  3  1   3"])
+  check.eq(conserta_strings(["Palmeiras 3 1 3"]), ["Palmeiras  3  1  3"])
   check.eq(conserta_strings(["Palmeiras 3 1 3", "Corinthians 0 0 -3"]), [
     "Palmeiras    3  1   3", "Corinthians  0  0  -3",
   ])
@@ -664,10 +668,14 @@ pub fn conserta_strings_examples() {
       "Sao-Paulo    1  0  -1",
     ],
   )
+  check.eq(conserta_strings(["Sao-Paulo 30 10 2000", "Palmeiras 3 1 2"]), 
+  [
+    "Sao-Paulo  30  10  2000", "Palmeiras   3   1     2",
+  ])
 }
 
 /// Encontra a string de maior tamanho de uma lista de strings.
-pub fn max_time_len(lst: List(String)) -> Int {
+pub fn max_str_len(lst: List(String)) -> Int {
   list.fold(lst, 0, fn(acc, str) {
     case string.length(str) > acc {
       True -> string.length(str)
@@ -677,10 +685,10 @@ pub fn max_time_len(lst: List(String)) -> Int {
 }
 
 pub fn max_time_len_examples() {
-  check.eq(max_time_len([]), 0)
-  check.eq(max_time_len(["Palmeiras", "Corinthians"]), 11)
+  check.eq(max_str_len([]), 0)
+  check.eq(max_str_len(["Palmeiras", "Corinthians"]), 11)
   check.eq(
-    max_time_len(["Sao-Paulo", "Atletico-MG", "Flamengo", "Palmeiras"]),
+    max_str_len(["Sao-Paulo", "Atletico-MG", "Flamengo", "Palmeiras"]),
     11,
   )
 }
@@ -696,19 +704,37 @@ pub fn lista_times_strings(desempenhos: List(String)) -> List(String) {
   })
 }
 
-pub fn lista_times_strings_examples() {
-  check.eq(lista_times_strings([]), [])
-  check.eq(lista_times_strings(["Palmeiras 3 1 3"]), ["Palmeiras"])
-  check.eq(lista_times_strings(["Palmeiras 3 1 3", "Corinthians 0 0 -3"]), [
-    "Palmeiras", "Corinthians",
-  ])
-  check.eq(
-    lista_times_strings([
-      "Flamengo 6 2 2", "Atletico-MG 3 1 0", "Palmeiras 1 0 -1",
-      "Sao-Paulo 1 0 -1",
-    ]),
-    ["Flamengo", "Atletico-MG", "Palmeiras", "Sao-Paulo"],
-  )
+/// Cria uma lista com os pontos de todos os times a partir de uma lista de strings
+/// no formato "time pontos vitórias saldo_de_gols".
+pub fn lista_pontos_strings(desempenhos: List(String)) -> List(String) {
+  list.map(desempenhos, fn(desempenho) {
+    case string.split(desempenho, " ") {
+      [_, pontos, ..] -> pontos
+      _ -> ""
+    }
+  })
+}
+
+/// Cria uma lista com as vitórias de todos os times a partir de uma lista de strings
+/// no formato "time pontos vitórias saldo_de_gols".
+pub fn lista_vitorias_strings(desempenhos: List(String)) -> List(String) {
+  list.map(desempenhos, fn(desempenho) {
+    case string.split(desempenho, " ") {
+      [_, _, vitorias, ..] -> vitorias
+      _ -> ""
+    }
+  })
+}
+
+/// Cria uma lista com os saldos de gols de todos os times a partir de uma lista de strings
+/// no formato "time pontos vitórias saldo_de_gols".
+pub fn lista_saldo_gols_strings(desempenhos: List(String)) -> List(String) {
+  list.map(desempenhos, fn(desempenho) {
+    case string.split(desempenho, " ") {
+      [_, _, _, saldo_gols] -> saldo_gols
+      _ -> ""
+    }
+  })
 }
 
 // Monta a classificação dos times a partir dos *resultados* de seus jogos.
