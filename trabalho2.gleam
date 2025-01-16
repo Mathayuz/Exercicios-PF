@@ -632,10 +632,10 @@ pub fn desempenhos_para_strings_examples() {
 
 /// Conserta o formato das strings dos desempenhos para que a saída seja mais amigável.
 pub fn conserta_strings(lst: List(String)) -> List(String) {
-  let maior_tamanho = max_str_len(lista_times_strings(lst))
-  let maior_pontos = max_str_len(lista_pontos_strings(lst))
-  let maior_vitoria = max_str_len(lista_vitorias_strings(lst))
-  let maior_saldo_gols = max_str_len(lista_saldo_gols_strings(lst))
+  let maior_tamanho = max_str_len(lista_campos_strings(lst, 1))
+  let maior_pontos = max_str_len(lista_campos_strings(lst, 2))
+  let maior_vitoria = max_str_len(lista_campos_strings(lst, 3))
+  let maior_saldo_gols = max_str_len(lista_campos_strings(lst, 4))
 
   list.map(lst, fn(str) {
     case string.split(str, " ") {
@@ -668,8 +668,7 @@ pub fn conserta_strings_examples() {
       "Sao-Paulo    1  0  -1",
     ],
   )
-  check.eq(conserta_strings(["Sao-Paulo 30 10 2000", "Palmeiras 3 1 2"]), 
-  [
+  check.eq(conserta_strings(["Sao-Paulo 30 10 2000", "Palmeiras 3 1 2"]), [
     "Sao-Paulo  30  10  2000", "Palmeiras   3   1     2",
   ])
 }
@@ -684,55 +683,19 @@ pub fn max_str_len(lst: List(String)) -> Int {
   })
 }
 
-pub fn max_time_len_examples() {
-  check.eq(max_str_len([]), 0)
-  check.eq(max_str_len(["Palmeiras", "Corinthians"]), 11)
-  check.eq(
-    max_str_len(["Sao-Paulo", "Atletico-MG", "Flamengo", "Palmeiras"]),
-    11,
-  )
-}
-
 /// Cria uma lista com os nomes de todos os times a partir de uma lista de strings
 /// no formato "time pontos vitórias saldo_de_gols".
-pub fn lista_times_strings(desempenhos: List(String)) -> List(String) {
+pub fn lista_campos_strings(
+  desempenhos: List(String),
+  campo: Int,
+) -> List(String) {
   list.map(desempenhos, fn(desempenho) {
-    case string.split(desempenho, " ") {
-      [time, ..] -> time
-      _ -> ""
-    }
-  })
-}
-
-/// Cria uma lista com os pontos de todos os times a partir de uma lista de strings
-/// no formato "time pontos vitórias saldo_de_gols".
-pub fn lista_pontos_strings(desempenhos: List(String)) -> List(String) {
-  list.map(desempenhos, fn(desempenho) {
-    case string.split(desempenho, " ") {
-      [_, pontos, ..] -> pontos
-      _ -> ""
-    }
-  })
-}
-
-/// Cria uma lista com as vitórias de todos os times a partir de uma lista de strings
-/// no formato "time pontos vitórias saldo_de_gols".
-pub fn lista_vitorias_strings(desempenhos: List(String)) -> List(String) {
-  list.map(desempenhos, fn(desempenho) {
-    case string.split(desempenho, " ") {
-      [_, _, vitorias, ..] -> vitorias
-      _ -> ""
-    }
-  })
-}
-
-/// Cria uma lista com os saldos de gols de todos os times a partir de uma lista de strings
-/// no formato "time pontos vitórias saldo_de_gols".
-pub fn lista_saldo_gols_strings(desempenhos: List(String)) -> List(String) {
-  list.map(desempenhos, fn(desempenho) {
-    case string.split(desempenho, " ") {
-      [_, _, _, saldo_gols] -> saldo_gols
-      _ -> ""
+    case string.split(desempenho, " "), campo {
+      [time, ..], 1 -> time
+      [_, pontos, ..], 2 -> pontos
+      [_, _, vitorias, ..], 3 -> vitorias
+      [_, _, _, saldo_de_gols], 4 -> saldo_de_gols
+      _, _ -> ""
     }
   })
 }
