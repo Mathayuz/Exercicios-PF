@@ -13,7 +13,7 @@ import sgleam/check
 // expressão pós-fixa. 
 
 // O programa deve ser capaz de lidar com expressões que contêm
-// números inteiros e operadores aritméticos como adição (+),
+// números inteiros (operandos) e operadores aritméticos como adição (+),
 // subtração (-), multiplicação (*) e divisão (/). O programa deve
 // ser capaz de lidar com expressões que contêm parênteses para
 // definir a precedência dos operadores.
@@ -23,18 +23,36 @@ import sgleam/check
 pub type Erros {
   // Erro de divisão por zero.
   DivisaoPorZero
-  // Erro de expressão inválida.
-  ExpressaoInvalida
+  // Erro de expressão infixa inválida.
+  ExpressaoInfixaInvalida
+  // Erro de expressão pós-fixa inválida.
+  ExpressaoPosFixaInvalida
   // Erro de parênteses inválidos.
   ParentesesInvalidos
 }
 
-/// Um símbolo de uma expressão
-pub type Simbolo {
+/// Um operador aritmético.
+pub type Operador {
+  Adicao
+  Subtracao
+  Multiplicacao
+  Divisao
+}
+
+/// Um símbolo de uma expressão na notação pós-fixa.
+pub type SimboloPosFixa {
   // Número inteiro.
-  Operando(numero: Int)
+  OperandoPosFixa(numero: Int)
   // Operador aritmético.
-  Operador(operador: String)
+  OperadorPosFixa(operador: Operador)
+}
+
+/// Um símbolo de uma expressão na notação infixa.
+pub type SimboloInfixa {
+  // Número inteiro.
+  OperandoInfixa(numero: Int)
+  // Operador aritmético.
+  OperadorInfixa(operador: Operador)
   // Parêntese de abertura.
   ParenteseAbre
   // Parêntese de fechamento.
@@ -42,60 +60,61 @@ pub type Simbolo {
 }
 
 /// Realiza a avaliação de uma expressão na notação pós-fixa.
-pub fn avalia_pos_fixa(lista: List(Simbolo)) -> Int {
-  let resultado = list.fold(lista, [], avalia_pos_fixa_aux)
-  case resultado {
-    [Operando(valor)] -> valor
-    _ -> 0
-  }
+/// Onde cada simbolo da *lista* deve ser operando ou operador.
+pub fn avalia_pos_fixa(lista: List(SimboloPosFixa)) -> Result(Int, Erros) {
+  use resultado <- list.all(avalia_pos_fixa(lista))
 }
 
 pub fn avalia_pos_fixa_examples() {
-  check.eq(avalia_pos_fixa([Operando(1)]), 1)
-  check.eq(avalia_pos_fixa([Operando(1), Operando(2), Operador("+")]), 3)
-  check.eq(avalia_pos_fixa([Operando(1), Operando(2), Operador("+"), Operando(3), Operador("*")]), 9)
-  check.eq(avalia_pos_fixa([Operando(3), Operando(2), Operador("-"), Operando(4), Operador("*"), Operando(4), Operador("/")]), 1)
+  check.eq(avalia_pos_fixa([OperandoPosFixa(1)]), Ok(1))
+  check.eq(avalia_pos_fixa([OperandoPosFixa(1), OperandoPosFixa(2), OperadorPosFixa(Adicao)]), Ok(3))
+  check.eq(avalia_pos_fixa([OperandoPosFixa(1), OperandoPosFixa(2), OperadorPosFixa(Adicao), OperandoPosFixa(3), OperadorPosFixa(Multiplicacao)]), Ok(9))
+  check.eq(avalia_pos_fixa([OperandoPosFixa(3), OperandoPosFixa(2), OperadorPosFixa(Subtracao), OperandoPosFixa(4), OperadorPosFixa(Multiplicacao), OperandoPosFixa(4), OperadorPosFixa(Divisao)]), Ok(1))
+  check.eq(avalia_pos_fixa([OperandoPosFixa(9), OperandoPosFixa(4), OperandoPosFixa(8), OperandoPosFixa(6), OperadorPosFixa(Subtracao), OperadorPosFixa(Multiplicacao), OperadorPosFixa(Adicao)]), Ok(17))
 }
 
-pub fn avalia_pos_fixa_aux(pilha: List(Simbolo), simbolo: Simbolo) -> List(Simbolo) {
+pub fn avalia_pos_fixa_aux(pilha: List(SimboloPosFixa), simbolo: SimboloPosFixa) -> List(Result(SimboloPosFixa, Erros)) {
   case simbolo {
-    Operando(numero) -> list.append(pilha, [Operando(numero)])
-    Operador(operador) -> [Operando(aplica_operador(pilha, operador))]
-    ParenteseAbre -> []
-    ParenteseFecha -> []
+    OperandoPosFixa(numero) -> list.append(pilha, [OperandoPosFixa(numero)])
+    OperadorPosFixa(operador) -> list.append(pilha, [OperandoPosFixa(operador)])
   }
 }
 
-pub fn aplica_operador(pilha: List(Simbolo), operador: String) -> Int {
+pub fn aplica_operador(pilha: List(SimboloPosFixa), operador: Operador) -> Result(Int, Erros) {
+  let pilha = list.reverse(pilha)
   case pilha {
-    [Operando(primeiro), Operando(segundo)] -> case operador {
-      "+" -> primeiro + segundo
-      "-" -> primeiro - segundo
-      "*" -> primeiro * segundo
-      "/" -> primeiro / segundo
-      _ -> 0
+    [OperandoPosFixa(operando2), OperandoPosFixa(operando1), ..] -> {
+      case operador {
+        Adicao -> Ok(operando1 + operando2)
+        Subtracao -> Ok(operando1 - operando2)
+        Multiplicacao -> Ok(operando1 * operando2)
+        Divisao -> {
+          case operando2 == 0 {
+            True -> Error(DivisaoPorZero)
+            False -> Ok(operando1 / operando2)
+          }
+        }
+      }
     }
-    _ -> 0
+    _ -> Error(ExpressaoPosFixaInvalida)
   }
 }
 
-/// Converte uma expressão infixa em uma expressão pós-fixa.
-pub fn converte_infixa(expressao: List(Simbolo)) -> List(Simbolo) {
+/// Converte uma *expressão* infixa em uma expressão pós-fixa.
+pub fn converte_infixa(expressao: List(SimboloInfixa)) -> Result(List(SimboloPosFixa), Erros) {
   todo
 }
 
-/// Converte uma expressão do tipo string em uma lista de símbolos.
-pub fn converte_string(expressao: String) -> Result(List(Simbolo), Erros) {
+/// Converte uma *expressão* do tipo string em uma lista de símbolos.
+pub fn converte_string(expressao: String) -> Result(List(SimboloInfixa), Erros) {
   todo
 }
 
-/// Função principal que recebe uma expressão infixa e calcula o valor da expressão.
+/// Função principal que recebe uma *expressão* infixa e calcula o valor da expressão.
 pub fn calcula_expressao(expressao: String) -> Result(Int, Erros) {
-  use simbolos <- result.try(converte_string(expressao))
-  simbolos
-  |> converte_infixa
-  |> avalia_pos_fixa
-  |> Ok
+  use expressao_convertida <- result.try(converte_string(expressao))
+  use expressao_pos_fixa <- result.try(converte_infixa(expressao_convertida))
+  avalia_pos_fixa(expressao_pos_fixa)
 }
 
 pub fn calcula_expressao_examples() {
@@ -109,7 +128,7 @@ pub fn calcula_expressao_examples() {
   check.eq(calcula_expressao("(5 + 2) / (4 - 2) + 1"), Ok(4))
   check.eq(calcula_expressao("((5 + 2) / (4 - 2) + 1) * (5 * 3 / 3)"), Ok(20))
   check.eq(calcula_expressao("1 / 0"), Error(DivisaoPorZero))
-  check.eq(calcula_expressao("1 + 2 * 3 /"), Error(ExpressaoInvalida))
-  check.eq(calcula_expressao("1 + a"), Error(ExpressaoInvalida))
+  check.eq(calcula_expressao("1 + 2 * 3 /"), Error(ExpressaoInfixaInvalida))
+  check.eq(calcula_expressao("1 + a"), Error(ExpressaoInfixaInvalida))
   check.eq(calcula_expressao("1 + 2 * 3 / (4 - 2"), Error(ParentesesInvalidos))
 }
