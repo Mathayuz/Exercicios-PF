@@ -62,7 +62,11 @@ pub type SimboloInfixa {
 /// Realiza a avaliação de uma expressão na notação pós-fixa.
 /// Onde cada simbolo da *lista* deve ser operando ou operador.
 pub fn avalia_pos_fixa(lista: List(SimboloPosFixa)) -> Result(Int, Erros) {
-  use resultado <- list.all(avalia_pos_fixa(lista))
+  let resultado = list.fold(lista, [], avalia_pos_fixa_aux)
+  case resultado {
+    [OperandoPosFixa(resultado)] -> Ok(resultado)
+    _ -> Error(ExpressaoPosFixaInvalida)
+  }
 }
 
 pub fn avalia_pos_fixa_examples() {
@@ -71,32 +75,36 @@ pub fn avalia_pos_fixa_examples() {
   check.eq(avalia_pos_fixa([OperandoPosFixa(1), OperandoPosFixa(2), OperadorPosFixa(Adicao), OperandoPosFixa(3), OperadorPosFixa(Multiplicacao)]), Ok(9))
   check.eq(avalia_pos_fixa([OperandoPosFixa(3), OperandoPosFixa(2), OperadorPosFixa(Subtracao), OperandoPosFixa(4), OperadorPosFixa(Multiplicacao), OperandoPosFixa(4), OperadorPosFixa(Divisao)]), Ok(1))
   check.eq(avalia_pos_fixa([OperandoPosFixa(9), OperandoPosFixa(4), OperandoPosFixa(8), OperandoPosFixa(6), OperadorPosFixa(Subtracao), OperadorPosFixa(Multiplicacao), OperadorPosFixa(Adicao)]), Ok(17))
+  check.eq(avalia_pos_fixa([OperadorPosFixa(Adicao)]), Error(ExpressaoPosFixaInvalida))
+  check.eq(avalia_pos_fixa([OperadorPosFixa(Adicao), OperandoPosFixa(3), OperandoPosFixa(4), OperadorPosFixa(Subtracao)]), Error(ExpressaoPosFixaInvalida))
 }
 
-pub fn avalia_pos_fixa_aux(pilha: List(SimboloPosFixa), simbolo: SimboloPosFixa) -> List(Result(SimboloPosFixa, Erros)) {
+pub fn avalia_pos_fixa_aux(pilha: List(SimboloPosFixa), simbolo: SimboloPosFixa) -> List(SimboloPosFixa) {
   case simbolo {
-    OperandoPosFixa(numero) -> list.append(pilha, [OperandoPosFixa(numero)])
-    OperadorPosFixa(operador) -> list.append(pilha, [OperandoPosFixa(operador)])
+    OperandoPosFixa(numero) -> [OperandoPosFixa(numero), ..pilha]
+    OperadorPosFixa(operador) -> [aplica_operador(pilha, simbolo), ..pilha_sem_2_primeiros(pilha)]
   }
 }
 
-pub fn aplica_operador(pilha: List(SimboloPosFixa), operador: Operador) -> Result(Int, Erros) {
-  let pilha = list.reverse(pilha)
+pub fn pilha_sem_2_primeiros(pilha: List(SimboloPosFixa)) -> List(SimboloPosFixa) {
+  case pilha {
+    [_, _, ..resto] -> resto
+    _ -> pilha
+  }
+}
+
+pub fn aplica_operador(pilha: List(SimboloPosFixa), operador: SimboloPosFixa) -> SimboloPosFixa {
   case pilha {
     [OperandoPosFixa(operando2), OperandoPosFixa(operando1), ..] -> {
       case operador {
-        Adicao -> Ok(operando1 + operando2)
-        Subtracao -> Ok(operando1 - operando2)
-        Multiplicacao -> Ok(operando1 * operando2)
-        Divisao -> {
-          case operando2 == 0 {
-            True -> Error(DivisaoPorZero)
-            False -> Ok(operando1 / operando2)
-          }
-        }
+        OperadorPosFixa(Adicao) -> OperandoPosFixa(operando1 + operando2)
+        OperadorPosFixa(Subtracao) -> OperandoPosFixa(operando1 - operando2)
+        OperadorPosFixa(Multiplicacao) -> OperandoPosFixa(operando1 * operando2)
+        OperadorPosFixa(Divisao) -> OperandoPosFixa(operando1 / operando2)
+        OperandoPosFixa(_) -> operador
       }
     }
-    _ -> Error(ExpressaoPosFixaInvalida)
+    _ -> operador
   }
 }
 
