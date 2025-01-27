@@ -333,7 +333,7 @@ pub fn verifica_ordem_aux(
   }
 }
 
-// Funutenção auxiliar para remover os parênteses de uma *expressão*.
+// Função auxiliar para remover os parênteses de uma *expressão*.
 pub fn remove_parenteses(simbolo: SimboloInfixa) -> Bool {
   case simbolo {
     OperandoInfixa(_) -> True
@@ -527,7 +527,7 @@ pub fn converte_string_examples() {
 }
 
 // Função auxiliar par remover os espaços de uma lista de *símbolos*.
-pub fn remove_espacos(simbolos: List(String)) -> List(String) {
+pub fn remove_espacos(simbolos: List(String)) -> List(SimboloInfixa) {
   list.filter(simbolos, fn(s) {
     case s {
       " " -> False
