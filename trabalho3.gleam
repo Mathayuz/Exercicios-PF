@@ -275,6 +275,13 @@ pub fn converte_infixa_examples() {
     ]),
     Error(ParentesesInvalidos),
   )
+  check.eq(
+    converte_infixa([
+      ParenteseFecha,
+      ParenteseAbre,
+    ]),
+    Error(ParentesesInvalidos),
+  )
 }
 
 // Função auxiliar para verificar se há algum erro semântico em uma *expressão* infixa.
@@ -520,7 +527,7 @@ pub fn converte_string_examples() {
 }
 
 // Função auxiliar par remover os espaços de uma lista de *símbolos*.
-pub fn remove_espacos(simbolos: List(String)) -> List(SimboloInfixa) {
+pub fn remove_espacos(simbolos: List(String)) -> List(String) {
   list.filter(simbolos, fn(s) {
     case s {
       " " -> False
