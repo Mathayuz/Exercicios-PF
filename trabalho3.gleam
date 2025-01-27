@@ -128,6 +128,8 @@ pub fn avalia_pos_fixa_examples() {
   )
 }
 
+// Função auxiliar que define o que será feito com um símbolo
+// de uma expressão na notação pós-fixa, a partir da *pilha* e do *símbolo*.
 pub fn avalia_pos_fixa_aux(
   pilha: List(SimboloPosFixa),
   simbolo: SimboloPosFixa,
@@ -141,6 +143,7 @@ pub fn avalia_pos_fixa_aux(
   }
 }
 
+// Função auxiliar para remover os dois primeiros elementos de uma *pilha*.
 pub fn pilha_sem_2_primeiros(
   pilha: List(SimboloPosFixa),
 ) -> List(SimboloPosFixa) {
@@ -150,6 +153,8 @@ pub fn pilha_sem_2_primeiros(
   }
 }
 
+// Função auxiliar para aplicar um *operador* aos dois operandos
+// desempilhados da *pilha*.
 pub fn aplica_operador(
   pilha: List(SimboloPosFixa),
   operador: SimboloPosFixa,
@@ -175,7 +180,7 @@ pub fn converte_infixa(
   use expressao_sem_erro <- result.try(verifica_erros_infixa(expressao))
   let tupla = list.fold(expressao_sem_erro, [[], []], converte_infixa_aux)
   let expressao_pos_fixa = remove_op_restantes(tupla)
-  Ok(list.map(expressao_pos_fixa, troca_tipos))
+  Ok(list.map(expressao_pos_fixa, converte_infixa_posfixa))
 }
 
 pub fn converte_infixa_examples() {
@@ -188,7 +193,13 @@ pub fn converte_infixa_examples() {
       OperadorInfixa(Subtracao),
       OperandoInfixa(4),
     ]),
-    Ok([OperandoPosFixa(1), OperandoPosFixa(2), OperadorPosFixa(Adicao), OperandoPosFixa(4), OperadorPosFixa(Subtracao)]),
+    Ok([
+      OperandoPosFixa(1),
+      OperandoPosFixa(2),
+      OperadorPosFixa(Adicao),
+      OperandoPosFixa(4),
+      OperadorPosFixa(Subtracao),
+    ]),
   )
   check.eq(
     converte_infixa([
@@ -236,7 +247,15 @@ pub fn converte_infixa_examples() {
       OperadorPosFixa(Divisao),
     ]),
   )
-  check.eq(converte_infixa([OperandoInfixa(1), OperadorInfixa(Divisao), OperandoInfixa(2), OperadorInfixa(Adicao)]), Error(ExpressaoInfixaInvalida))
+  check.eq(
+    converte_infixa([
+      OperandoInfixa(1),
+      OperadorInfixa(Divisao),
+      OperandoInfixa(2),
+      OperadorInfixa(Adicao),
+    ]),
+    Error(ExpressaoInfixaInvalida),
+  )
   check.eq(
     converte_infixa([
       ParenteseAbre,
@@ -258,13 +277,19 @@ pub fn converte_infixa_examples() {
   )
 }
 
-pub fn verifica_erros_infixa(expressao: List(SimboloInfixa)) -> Result(List(SimboloInfixa), Erros) {
+// Função auxiliar para verificar se há algum erro semântico em uma *expressão* infixa.
+pub fn verifica_erros_infixa(
+  expressao: List(SimboloInfixa),
+) -> Result(List(SimboloInfixa), Erros) {
   use expressao_p <- result.try(verifica_parenteses(expressao))
   use _ <- result.try(verifica_ordem(expressao_p))
   Ok(expressao)
 }
 
-pub fn verifica_parenteses(expressao: List(SimboloInfixa)) -> Result(List(SimboloInfixa), Erros) {
+// Função auxiliar para verificar se os parênteses de uma *expressão* são válidos.
+pub fn verifica_parenteses(
+  expressao: List(SimboloInfixa),
+) -> Result(List(SimboloInfixa), Erros) {
   let parenteses = list.fold(expressao, 0, verifica_parenteses_aux)
   case parenteses {
     0 -> Ok(expressao)
@@ -272,6 +297,8 @@ pub fn verifica_parenteses(expressao: List(SimboloInfixa)) -> Result(List(Simbol
   }
 }
 
+// Função auxiliar para verificar se os parênteses são válidos, utilizando
+// um *contador* e verificando o *simbolo*.
 pub fn verifica_parenteses_aux(contador: Int, simbolo: SimboloInfixa) -> Int {
   case simbolo {
     ParenteseAbre -> contador + 1
@@ -280,12 +307,18 @@ pub fn verifica_parenteses_aux(contador: Int, simbolo: SimboloInfixa) -> Int {
   }
 }
 
-pub fn verifica_ordem(expressao: List(SimboloInfixa)) -> Result(List(SimboloInfixa), Erros) {
+// Função auxiliar para verificar a ordem dos símbolos de uma *expressão*.
+pub fn verifica_ordem(
+  expressao: List(SimboloInfixa),
+) -> Result(List(SimboloInfixa), Erros) {
   let sem_parenteses = list.filter(expressao, remove_parenteses)
   verifica_ordem_aux(sem_parenteses)
 }
 
-pub fn verifica_ordem_aux(expressao: List(SimboloInfixa)) -> Result(List(SimboloInfixa), Erros) {
+// Função auxiliar para verificar a ordem dos símbolos de uma *expressão*.
+pub fn verifica_ordem_aux(
+  expressao: List(SimboloInfixa),
+) -> Result(List(SimboloInfixa), Erros) {
   case expressao {
     [OperandoInfixa(numero)] -> Ok([OperandoInfixa(numero)])
     [OperandoInfixa(_), OperadorInfixa(_), ..resto] -> verifica_ordem_aux(resto)
@@ -293,6 +326,7 @@ pub fn verifica_ordem_aux(expressao: List(SimboloInfixa)) -> Result(List(Simbolo
   }
 }
 
+// Funutenção auxiliar para remover os parênteses de uma *expressão*.
 pub fn remove_parenteses(simbolo: SimboloInfixa) -> Bool {
   case simbolo {
     OperandoInfixa(_) -> True
@@ -301,7 +335,8 @@ pub fn remove_parenteses(simbolo: SimboloInfixa) -> Bool {
   }
 }
 
-pub fn troca_tipos(simbolo: SimboloInfixa) -> SimboloPosFixa {
+// Função auxiliar para trocar os tipos de símbolos de uma *expressão*.
+pub fn converte_infixa_posfixa(simbolo: SimboloInfixa) -> SimboloPosFixa {
   case simbolo {
     OperandoInfixa(numero) -> OperandoPosFixa(numero)
     OperadorInfixa(operador) -> OperadorPosFixa(operador)
@@ -310,49 +345,80 @@ pub fn troca_tipos(simbolo: SimboloInfixa) -> SimboloPosFixa {
   }
 }
 
-pub fn remove_op_restantes(tupla: List(List(SimboloInfixa))) -> List(SimboloInfixa) {
+// Função auxiliar para remover os operadores restantes da pilha e adiciona-los
+// à saída, utilizando uma *tupla*.
+pub fn remove_op_restantes(
+  tupla: List(List(SimboloInfixa)),
+) -> List(SimboloInfixa) {
   case tupla {
-    [saida, pilha] -> case pilha {
-      [OperadorInfixa(operador), ..resto] -> remove_op_restantes([list.append(saida, [OperadorInfixa(operador)]), resto])
-      _ -> saida
-    }
+    [saida, pilha] ->
+      case pilha {
+        [OperadorInfixa(operador), ..resto] ->
+          remove_op_restantes([
+            list.append(saida, [OperadorInfixa(operador)]),
+            resto,
+          ])
+        _ -> saida
+      }
     _ -> []
   }
 }
 
+// Função auxiliar para converter uma *expressão* infixa em uma expressão pós-fixa,
+// utilizando uma *tupla* e verificando um *símbolo*.
 pub fn converte_infixa_aux(
   tupla: List(List(SimboloInfixa)),
   simbolo: SimboloInfixa,
 ) -> List(List(SimboloInfixa)) {
   case tupla {
-    [saida, pilha] -> case simbolo {
-      OperandoInfixa(_) -> [list.append(saida, [simbolo]), pilha]
-      OperadorInfixa(operador) -> operador_aux(saida, pilha, operador)
-      ParenteseAbre -> [saida, [simbolo, ..pilha]]
-      ParenteseFecha -> parentese_fecha_aux(saida, pilha)
-    }
+    [saida, pilha] ->
+      case simbolo {
+        OperandoInfixa(_) -> [list.append(saida, [simbolo]), pilha]
+        OperadorInfixa(operador) -> operador_aux(saida, pilha, operador)
+        ParenteseAbre -> [saida, [simbolo, ..pilha]]
+        ParenteseFecha -> parentese_fecha_aux(saida, pilha)
+      }
     _ -> tupla
   }
 }
 
-pub fn operador_aux(saida: List(SimboloInfixa), pilha: List(SimboloInfixa), operador: Operador) -> List(List(SimboloInfixa)) {
+// Função auxiliar para realizar o algoritmo caso o símbolo seja um *operador*, utilizando
+// a *saída* e a *pilha*.
+pub fn operador_aux(
+  saida: List(SimboloInfixa),
+  pilha: List(SimboloInfixa),
+  operador: Operador,
+) -> List(List(SimboloInfixa)) {
   case pilha {
-    [OperadorInfixa(operador_pilha), ..resto] -> case precedencia(operador_pilha) >= precedencia(operador) {
-      True -> operador_aux(list.append(saida, [OperadorInfixa(operador_pilha)]), resto, operador)
-      False -> [saida, [OperadorInfixa(operador), ..pilha]]
-    }
+    [OperadorInfixa(operador_pilha), ..resto] ->
+      case precedencia(operador_pilha) >= precedencia(operador) {
+        True ->
+          operador_aux(
+            list.append(saida, [OperadorInfixa(operador_pilha)]),
+            resto,
+            operador,
+          )
+        False -> [saida, [OperadorInfixa(operador), ..pilha]]
+      }
     _ -> [saida, [OperadorInfixa(operador), ..pilha]]
   }
 }
 
-pub fn parentese_fecha_aux(saida: List(SimboloInfixa), pilha: List(SimboloInfixa)) -> List(List(SimboloInfixa)) {
+// Função auxiliar para realizar o algoritmo caso o símbolo seja um parêntese de fechamento, utilizando
+// a *saída* e a *pilha*.
+pub fn parentese_fecha_aux(
+  saida: List(SimboloInfixa),
+  pilha: List(SimboloInfixa),
+) -> List(List(SimboloInfixa)) {
   case pilha {
-    [OperadorInfixa(operador), ..resto] -> parentese_fecha_aux(list.append(saida, [OperadorInfixa(operador)]), resto)
+    [OperadorInfixa(operador), ..resto] ->
+      parentese_fecha_aux(list.append(saida, [OperadorInfixa(operador)]), resto)
     [ParenteseAbre, ..] -> [saida, remove_primeiro(pilha)]
     _ -> [saida, pilha]
   }
 }
 
+// Função auxiliar para remover o primeiro elemento de uma lista de *símbolos*.
 pub fn remove_primeiro(simbolos: List(SimboloInfixa)) -> List(SimboloInfixa) {
   case simbolos {
     [_, ..resto] -> resto
@@ -360,6 +426,7 @@ pub fn remove_primeiro(simbolos: List(SimboloInfixa)) -> List(SimboloInfixa) {
   }
 }
 
+// Função auxiliar para definir a precedência de um *operador*.
 pub fn precedencia(operador: Operador) -> Int {
   case operador {
     Adicao -> 1
@@ -371,7 +438,95 @@ pub fn precedencia(operador: Operador) -> Int {
 
 /// Converte uma *expressão* do tipo string em uma lista de símbolos.
 pub fn converte_string(expressao: String) -> Result(List(SimboloInfixa), Erros) {
-  todo
+  let simbolos = string.split(expressao, "")
+  let simbolos_sem_espaco = remove_espacos(simbolos)
+  converte_string_infixa(simbolos_sem_espaco)
+}
+
+pub fn converte_string_examples() {
+  check.eq(converte_string("1"), Ok([OperandoInfixa(1)]))
+  check.eq(
+    converte_string("1+2"),
+    Ok([OperandoInfixa(1), OperadorInfixa(Adicao), OperandoInfixa(2)]),
+  )
+  check.eq(
+    converte_string("1+2 * 3"),
+    Ok([
+      OperandoInfixa(1),
+      OperadorInfixa(Adicao),
+      OperandoInfixa(2),
+      OperadorInfixa(Multiplicacao),
+      OperandoInfixa(3),
+    ]),
+  )
+  check.eq(
+    converte_string("(1 + 2) * 3"),
+    Ok([
+      ParenteseAbre,
+      OperandoInfixa(1),
+      OperadorInfixa(Adicao),
+      OperandoInfixa(2),
+      ParenteseFecha,
+      OperadorInfixa(Multiplicacao),
+      OperandoInfixa(3),
+    ]),
+  )
+  check.eq(
+    converte_string("1 + 2 * 3 / 4"),
+    Ok([
+      OperandoInfixa(1),
+      OperadorInfixa(Adicao),
+      OperandoInfixa(2),
+      OperadorInfixa(Multiplicacao),
+      OperandoInfixa(3),
+      OperadorInfixa(Divisao),
+      OperandoInfixa(4),
+    ]),
+  )
+  check.eq(
+    converte_string("-5 + 3 * 2 / (4 - 2)"),
+    Ok([
+      OperandoInfixa(-5),
+      OperadorInfixa(Adicao),
+      OperandoInfixa(3),
+      OperadorInfixa(Multiplicacao),
+      OperandoInfixa(2),
+      OperadorInfixa(Divisao),
+      ParenteseAbre,
+      OperandoInfixa(4),
+      OperadorInfixa(Subtracao),
+      OperandoInfixa(2),
+      ParenteseFecha,
+    ]),
+  )
+  check.eq(
+    converte_string("(5 + 2) / (4 - 2) + 1"),
+    Ok([
+      ParenteseAbre,
+      OperandoInfixa(5),
+      OperadorInfixa(Adicao),
+      OperandoInfixa(2),
+      ParenteseFecha,
+      OperadorInfixa(Divisao),
+      ParenteseAbre,
+      OperandoInfixa(4),
+      OperadorInfixa(Subtracao),
+      OperandoInfixa(2),
+      ParenteseFecha,
+      OperadorInfixa(Adicao),
+      OperandoInfixa(1),
+    ]),
+  )
+}
+
+// Função auxiliar par remover os espaços de uma lista de *símbolos*.
+pub fn remove_espacos(simbolos: List(String)) -> List(SimboloInfixa) {
+  list.filter(simbolos, fn(s) {
+    case s {
+      " " -> False
+      _ -> True
+    }
+  })
 }
 
 /// Função principal que recebe uma *expressão* infixa e calcula o valor da expressão.
