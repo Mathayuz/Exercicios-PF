@@ -326,7 +326,7 @@ pub fn verifica_ordem_aux(
   }
 }
 
-// Funutenção auxiliar para remover os parênteses de uma *expressão*.
+// Função auxiliar para remover os parênteses de uma *expressão*.
 pub fn remove_parenteses(simbolo: SimboloInfixa) -> Bool {
   case simbolo {
     OperandoInfixa(_) -> True
@@ -519,7 +519,34 @@ pub fn converte_string_examples() {
   )
 }
 
-// Função auxiliar par remover os espaços de uma lista de *símbolos*.
+/// Função auxiliar que converte uma lista de Strings em uma lista de Simbolos.
+pub fn converte_string_infixa(expressao: List(String)) -> Result(List(SimboloInfixa), Erros) {
+  case expressao {
+    [] -> Ok([])
+    [primeiro, ..resto] -> case devolve_numero(primeiro) {
+      Ok(_) -> verifica_numero(_, resto, "")
+      Error()
+    }
+  }
+}
+
+pub fn devolve_numero(caractere: String) -> Result(Int, String) {
+  case int.parse(caractere) {
+    Ok(_) -> Ok(_)
+    Error(Nil) -> Error(caractere)
+  }
+}
+
+pub fn verifica_numero(numero_str: Int, resto: List(String), acc: String) -> SimboloInfixa {
+  case resto {
+    [] -> OperadorInfixa()
+    [primeiro, ..resto] -> case int.parse(primeiro) {
+      Ok(_) -> 
+    }
+  }
+}
+
+// Função auxiliar para remover os espaços de uma lista de *símbolos*.
 pub fn remove_espacos(simbolos: List(String)) -> List(SimboloInfixa) {
   list.filter(simbolos, fn(s) {
     case s {
