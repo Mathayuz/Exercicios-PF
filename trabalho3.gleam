@@ -136,7 +136,7 @@ pub fn avalia_pos_fixa_aux(
 ) -> List(SimboloPosFixa) {
   case simbolo {
     OperandoPosFixa(numero) -> [OperandoPosFixa(numero), ..pilha]
-    OperadorPosFixa(operador) -> [
+    OperadorPosFixa(_) -> [
       aplica_operador(pilha, simbolo),
       ..pilha_sem_2_primeiros(pilha)
     ]
@@ -278,6 +278,7 @@ pub fn converte_infixa_examples() {
   check.eq(
     converte_infixa([
       ParenteseFecha,
+      OperandoInfixa(5),
       ParenteseAbre,
     ]),
     Error(ParentesesInvalidos),
@@ -297,20 +298,19 @@ pub fn verifica_erros_infixa(
 pub fn verifica_parenteses(
   expressao: List(SimboloInfixa),
 ) -> Result(List(SimboloInfixa), Erros) {
-  let parenteses = list.fold(expressao, 0, verifica_parenteses_aux)
-  case parenteses {
+  let lista = list.fold_until(expressao, 0, fn(soma, simbolo) {
+    case soma >= 0 {
+      True -> case simbolo {
+        ParenteseAbre -> list.Continue(soma + 1)
+        ParenteseFecha -> list.Continue(soma - 1)
+        _ -> list.Continue(soma)
+      }
+      False -> list.Stop(soma)
+    }
+  })
+  case lista {
     0 -> Ok(expressao)
     _ -> Error(ParentesesInvalidos)
-  }
-}
-
-// Função auxiliar para verificar se os parênteses são válidos, utilizando
-// um *contador* e verificando o *simbolo*.
-pub fn verifica_parenteses_aux(contador: Int, simbolo: SimboloInfixa) -> Int {
-  case simbolo {
-    ParenteseAbre -> contador + 1
-    ParenteseFecha -> contador - 1
-    _ -> contador
   }
 }
 
@@ -524,16 +524,111 @@ pub fn converte_string_examples() {
       OperandoInfixa(1),
     ]),
   )
+  check.eq(converte_string("1 + a"), Error(ExpressaoInfixaInvalida))
+  check.eq(converte_string("b + 2"), Error(ExpressaoInfixaInvalida))
+}
+
+// Função auxiliar para converter uma lista de *símbolos* em uma lista de símbolos da notação infixa.
+pub fn converte_string_infixa(
+  simbolos: List(String),
+) -> Result(List(SimboloInfixa), Erros) {
+  let junta_numeros = junta_numeros([simbolos, []])
+  let junta_negativos = junta_negativos(junta_numeros)
+  case junta_negativos {
+    [lista_interessante, _] -> result.all(list.map(lista_interessante, converte_string_infixa_aux))
+    _ -> Error(ExpressaoInfixaInvalida)
+  }
 }
 
 // Função auxiliar par remover os espaços de uma lista de *símbolos*.
-pub fn remove_espacos(simbolos: List(String)) -> List(SimboloInfixa) {
+pub fn remove_espacos(simbolos: List(String)) -> List(String) {
   list.filter(simbolos, fn(s) {
     case s {
       " " -> False
       _ -> True
     }
   })
+}
+
+pub fn junta_numeros(
+  simbolos: List(List(String)),
+) -> List(List(String)) {
+  case simbolos {
+    [[primeiro, ..resto], saida] -> case int.parse(primeiro) {
+      Ok(_) -> junta_numeros([pula_n_caracteres(resto, string.length(junta_numeros_aux(primeiro, resto)) - 1), list.append(saida, [junta_numeros_aux(primeiro, resto)])])
+      Error(Nil) -> junta_numeros([resto, list.append(saida, [primeiro])])
+    }
+    [[], saida] -> [[], saida]
+    _ -> simbolos
+  }
+}
+
+pub fn junta_numeros_aux(primeiro: String, resto: List(String)) -> String {
+  case resto {
+    [] -> primeiro
+    [primeiro_resto, ..resto_resto] -> case int.parse(primeiro_resto) {
+      Ok(_) -> junta_numeros_aux(primeiro <> primeiro_resto, resto_resto)
+      Error(Nil) -> primeiro
+    }
+  }
+}
+
+pub fn pula_n_caracteres(
+  simbolos: List(String),
+  n: Int,
+) -> List(String) {
+  case n {
+    0 -> simbolos
+    _ -> case simbolos {
+      [_, ..resto] -> pula_n_caracteres(resto, n - 1)
+      _ -> simbolos
+    }
+  }
+}
+
+pub fn junta_negativos(
+  simbolos: List(List(String)),
+) -> List(List(String)) {
+  case simbolos {
+    [[], [anterior, primeiro, ..resto]] -> case anterior {
+      "-" -> case int.parse(primeiro) {
+        Ok(_) -> junta_negativos([[anterior <> primeiro], resto])
+        Error(Nil) -> junta_negativos([[anterior, primeiro], resto])
+      }
+      _ -> junta_negativos([[anterior, primeiro], resto])
+    }
+    [saida, [anterior, primeiro, segundo, ..resto]] -> case anterior {
+      "(" -> case primeiro {
+        "-" -> case int.parse(segundo) {
+          Ok(_) -> junta_negativos([list.append(saida, [anterior, primeiro <> segundo]), resto])
+          Error(Nil) -> junta_negativos([list.append(saida, [anterior, primeiro, segundo]), resto])
+        }
+        _ -> junta_negativos([list.append(saida, [anterior, primeiro, segundo]), resto])
+      }
+      _ -> junta_negativos([list.append(saida, [anterior, primeiro, segundo]), resto])
+    }
+    [saida, [unico]] -> [list.append(saida, [unico]), []]
+    [saida, [primeiro, segundo]] -> [list.append(saida, [primeiro, segundo]), []]
+    [saida, []] -> [saida, []]
+    _ -> simbolos
+  }
+}
+
+pub fn converte_string_infixa_aux(
+  simbolo: String,
+) -> Result(SimboloInfixa, Erros) {
+  case simbolo {
+    "+" -> Ok(OperadorInfixa(Adicao))
+    "-" -> Ok(OperadorInfixa(Subtracao))
+    "*" -> Ok(OperadorInfixa(Multiplicacao))
+    "/" -> Ok(OperadorInfixa(Divisao))
+    "(" -> Ok(ParenteseAbre)
+    ")" -> Ok(ParenteseFecha)
+    _ -> case int.parse(simbolo) {
+      Ok(numero) -> Ok(OperandoInfixa(numero))
+      _ -> Error(ExpressaoInfixaInvalida)
+    }
+  }
 }
 
 /// Função principal que recebe uma *expressão* infixa e calcula o valor da expressão.
@@ -544,15 +639,17 @@ pub fn calcula_expressao(expressao: String) -> Result(Int, Erros) {
 }
 
 pub fn calcula_expressao_examples() {
+  check.eq(calcula_expressao(""), Error(ExpressaoInfixaInvalida))
   check.eq(calcula_expressao("1"), Ok(1))
   check.eq(calcula_expressao("1 + 2"), Ok(3))
   check.eq(calcula_expressao("1 + 2 * 3"), Ok(7))
   check.eq(calcula_expressao("(1 + 2) * 3"), Ok(9))
   check.eq(calcula_expressao("1 + 2 * 3 / 4"), Ok(2))
   check.eq(calcula_expressao("5 + 3 * 2 / (4 - 2)"), Ok(8))
-  check.eq(calcula_expressao("(5 + 2) / (4 - 2) + 1"), Ok(4))
+  check.eq(calcula_expressao("(500 + 20) / (11 + 14) + 1010"), Ok(1030))
   check.eq(calcula_expressao("((5 + 2) / (4 - 2) + 1) * (5 * 3 / 3)"), Ok(20))
   check.eq(calcula_expressao("1 + 2 * 3 /"), Error(ExpressaoInfixaInvalida))
   check.eq(calcula_expressao("1 + a"), Error(ExpressaoInfixaInvalida))
   check.eq(calcula_expressao("1 + 2 * 3 / (4 - 2"), Error(ParentesesInvalidos))
+  check.eq(calcula_expressao("(11232 + 432173) * 47905 - )"), Error(ParentesesInvalidos))
 }
