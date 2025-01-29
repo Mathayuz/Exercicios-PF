@@ -276,11 +276,7 @@ pub fn converte_infixa_examples() {
     Error(ParentesesInvalidos),
   )
   check.eq(
-    converte_infixa([
-      ParenteseFecha,
-      OperandoInfixa(5),
-      ParenteseAbre,
-    ]),
+    converte_infixa([ParenteseFecha, OperandoInfixa(5), ParenteseAbre]),
     Error(ParentesesInvalidos),
   )
 }
@@ -298,16 +294,18 @@ pub fn verifica_erros_infixa(
 pub fn verifica_parenteses(
   expressao: List(SimboloInfixa),
 ) -> Result(List(SimboloInfixa), Erros) {
-  let lista = list.fold_until(expressao, 0, fn(soma, simbolo) {
-    case soma >= 0 {
-      True -> case simbolo {
-        ParenteseAbre -> list.Continue(soma + 1)
-        ParenteseFecha -> list.Continue(soma - 1)
-        _ -> list.Continue(soma)
+  let lista =
+    list.fold_until(expressao, 0, fn(soma, simbolo) {
+      case soma >= 0 {
+        True ->
+          case simbolo {
+            ParenteseAbre -> list.Continue(soma + 1)
+            ParenteseFecha -> list.Continue(soma - 1)
+            _ -> list.Continue(soma)
+          }
+        False -> list.Stop(soma)
       }
-      False -> list.Stop(soma)
-    }
-  })
+    })
   case lista {
     0 -> Ok(expressao)
     _ -> Error(ParentesesInvalidos)
@@ -333,7 +331,7 @@ pub fn verifica_ordem_aux(
   }
 }
 
-// Função auxiliar para remover os parênteses de uma *expressão*.
+// Função auxiliar que devolve True, se um *simbolo* não for um parêntese.
 pub fn remove_parenteses(simbolo: SimboloInfixa) -> Bool {
   case simbolo {
     OperandoInfixa(_) -> True
@@ -371,7 +369,7 @@ pub fn remove_op_restantes(
   }
 }
 
-// Função auxiliar para converter uma *expressão* infixa em uma expressão pós-fixa,
+// Função auxiliar para converter uma expressão infixa em uma expressão pós-fixa,
 // utilizando uma *tupla* e verificando um *símbolo*.
 pub fn converte_infixa_aux(
   tupla: List(List(SimboloInfixa)),
@@ -411,8 +409,8 @@ pub fn operador_aux(
   }
 }
 
-// Função auxiliar para realizar o algoritmo caso o símbolo seja um parêntese de fechamento, utilizando
-// a *saída* e a *pilha*.
+// Função auxiliar para realizar o algoritmo caso o símbolo seja um parêntese de 
+// fechamento, utilizando a *saída* e a *pilha*.
 pub fn parentese_fecha_aux(
   saida: List(SimboloInfixa),
   pilha: List(SimboloInfixa),
@@ -535,7 +533,8 @@ pub fn converte_string_infixa(
   let junta_numeros = junta_numeros([simbolos, []])
   let junta_negativos = junta_negativos(junta_numeros)
   case junta_negativos {
-    [lista_interessante, _] -> result.all(list.map(lista_interessante, converte_string_infixa_aux))
+    [lista_interessante, _] ->
+      result.all(list.map(lista_interessante, converte_string_infixa_aux))
     _ -> Error(ExpressaoInfixaInvalida)
   }
 }
@@ -550,70 +549,107 @@ pub fn remove_espacos(simbolos: List(String)) -> List(String) {
   })
 }
 
-pub fn junta_numeros(
-  simbolos: List(List(String)),
-) -> List(List(String)) {
+// Função auxiliar para juntar os números de uma expressão infixa, utilizando uma tupla de *simbolos*.
+// Onde a primeira lista é a entrada com todos os símbolos separados, e a segunda lista é a saída
+// com os números juntos.
+pub fn junta_numeros(simbolos: List(List(String))) -> List(List(String)) {
   case simbolos {
-    [[primeiro, ..resto], saida] -> case int.parse(primeiro) {
-      Ok(_) -> junta_numeros([pula_n_caracteres(resto, string.length(junta_numeros_aux(primeiro, resto)) - 1), list.append(saida, [junta_numeros_aux(primeiro, resto)])])
-      Error(Nil) -> junta_numeros([resto, list.append(saida, [primeiro])])
-    }
+    [[primeiro, ..resto], saida] ->
+      case int.parse(primeiro) {
+        Ok(_) ->
+          junta_numeros([
+            pula_n_caracteres(
+              resto,
+              string.length(junta_numeros_aux(primeiro, resto)) - 1,
+            ),
+            list.append(saida, [junta_numeros_aux(primeiro, resto)]),
+          ])
+        Error(Nil) -> junta_numeros([resto, list.append(saida, [primeiro])])
+      }
     [[], saida] -> [[], saida]
     _ -> simbolos
   }
 }
 
+// Função auxiliar para juntar os números de uma expressão infixa,
+// onde o *primeiro* é o primeiro número e o *resto* é o restante da expressão.
 pub fn junta_numeros_aux(primeiro: String, resto: List(String)) -> String {
   case resto {
     [] -> primeiro
-    [primeiro_resto, ..resto_resto] -> case int.parse(primeiro_resto) {
-      Ok(_) -> junta_numeros_aux(primeiro <> primeiro_resto, resto_resto)
-      Error(Nil) -> primeiro
-    }
+    [primeiro_resto, ..resto_resto] ->
+      case int.parse(primeiro_resto) {
+        Ok(_) -> junta_numeros_aux(primeiro <> primeiro_resto, resto_resto)
+        Error(Nil) -> primeiro
+      }
   }
 }
 
-pub fn pula_n_caracteres(
-  simbolos: List(String),
-  n: Int,
-) -> List(String) {
+// Função auxiliar para pular *n* caracteres de uma lista de *simbolos*.
+pub fn pula_n_caracteres(simbolos: List(String), n: Int) -> List(String) {
   case n {
     0 -> simbolos
-    _ -> case simbolos {
-      [_, ..resto] -> pula_n_caracteres(resto, n - 1)
-      _ -> simbolos
-    }
+    _ ->
+      case simbolos {
+        [_, ..resto] -> pula_n_caracteres(resto, n - 1)
+        _ -> simbolos
+      }
   }
 }
 
-pub fn junta_negativos(
-  simbolos: List(List(String)),
-) -> List(List(String)) {
+// Função auxiliar para juntar os números negativos de uma expressão infixa, 
+// utilizando uma tupla de *simbolos*. Onde a primeira lista é a saída com os os símbolos juntos
+// e a segunda lista é a entrada com todos os símbolos separados.
+pub fn junta_negativos(simbolos: List(List(String))) -> List(List(String)) {
   case simbolos {
-    [[], [anterior, primeiro, ..resto]] -> case anterior {
-      "-" -> case int.parse(primeiro) {
-        Ok(_) -> junta_negativos([[anterior <> primeiro], resto])
-        Error(Nil) -> junta_negativos([[anterior, primeiro], resto])
+    [[], [anterior, primeiro, ..resto]] ->
+      case anterior {
+        "-" ->
+          case int.parse(primeiro) {
+            Ok(_) -> junta_negativos([[anterior <> primeiro], resto])
+            Error(Nil) -> junta_negativos([[anterior, primeiro], resto])
+          }
+        _ -> junta_negativos([[anterior, primeiro], resto])
       }
-      _ -> junta_negativos([[anterior, primeiro], resto])
-    }
-    [saida, [anterior, primeiro, segundo, ..resto]] -> case anterior {
-      "(" -> case primeiro {
-        "-" -> case int.parse(segundo) {
-          Ok(_) -> junta_negativos([list.append(saida, [anterior, primeiro <> segundo]), resto])
-          Error(Nil) -> junta_negativos([list.append(saida, [anterior, primeiro, segundo]), resto])
-        }
-        _ -> junta_negativos([list.append(saida, [anterior, primeiro, segundo]), resto])
+    [saida, [anterior, primeiro, segundo, ..resto]] ->
+      case anterior {
+        "(" ->
+          case primeiro {
+            "-" ->
+              case int.parse(segundo) {
+                Ok(_) ->
+                  junta_negativos([
+                    list.append(saida, [anterior, primeiro <> segundo]),
+                    resto,
+                  ])
+                Error(Nil) ->
+                  junta_negativos([
+                    list.append(saida, [anterior, primeiro, segundo]),
+                    resto,
+                  ])
+              }
+            _ ->
+              junta_negativos([
+                list.append(saida, [anterior, primeiro, segundo]),
+                resto,
+              ])
+          }
+        _ ->
+          junta_negativos([
+            list.append(saida, [anterior, primeiro, segundo]),
+            resto,
+          ])
       }
-      _ -> junta_negativos([list.append(saida, [anterior, primeiro, segundo]), resto])
-    }
     [saida, [unico]] -> [list.append(saida, [unico]), []]
-    [saida, [primeiro, segundo]] -> [list.append(saida, [primeiro, segundo]), []]
+    [saida, [primeiro, segundo]] -> [
+      list.append(saida, [primeiro, segundo]),
+      [],
+    ]
     [saida, []] -> [saida, []]
     _ -> simbolos
   }
 }
 
+// Função auxiliar para converter um *simbolo* de uma expressão infixa em um *SimboloInfixa*.
 pub fn converte_string_infixa_aux(
   simbolo: String,
 ) -> Result(SimboloInfixa, Erros) {
@@ -624,10 +660,11 @@ pub fn converte_string_infixa_aux(
     "/" -> Ok(OperadorInfixa(Divisao))
     "(" -> Ok(ParenteseAbre)
     ")" -> Ok(ParenteseFecha)
-    _ -> case int.parse(simbolo) {
-      Ok(numero) -> Ok(OperandoInfixa(numero))
-      _ -> Error(ExpressaoInfixaInvalida)
-    }
+    _ ->
+      case int.parse(simbolo) {
+        Ok(numero) -> Ok(OperandoInfixa(numero))
+        _ -> Error(ExpressaoInfixaInvalida)
+      }
   }
 }
 
@@ -651,5 +688,8 @@ pub fn calcula_expressao_examples() {
   check.eq(calcula_expressao("1 + 2 * 3 /"), Error(ExpressaoInfixaInvalida))
   check.eq(calcula_expressao("1 + a"), Error(ExpressaoInfixaInvalida))
   check.eq(calcula_expressao("1 + 2 * 3 / (4 - 2"), Error(ParentesesInvalidos))
-  check.eq(calcula_expressao("(11232 + 432173) * 47905 - )"), Error(ParentesesInvalidos))
+  check.eq(
+    calcula_expressao("(11232 + 432173) * 47905 - )"),
+    Error(ParentesesInvalidos),
+  )
 }
