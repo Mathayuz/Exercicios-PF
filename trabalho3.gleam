@@ -21,8 +21,6 @@ import sgleam/check
 
 /// Os possíveis erros que podem ocorrer.
 pub type Erros {
-  // Erro de divisão por zero.
-  DivisaoPorZero
   // Erro de expressão infixa inválida.
   ExpressaoInfixaInvalida
   // Erro de expressão pós-fixa inválida.
